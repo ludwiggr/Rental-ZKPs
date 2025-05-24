@@ -15,6 +15,8 @@ mongoose.connect('mongodb://root:example@database:27017/db?authSource=admin')
 // Routes
 app.use('/api/listings', require('./routes/listings'));
 
+app.use('/api/register', require('./routes/register'));
+
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);

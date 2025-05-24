@@ -1,14 +1,23 @@
 version: '3.8'
 
 services:
+  landlord_client:
+    build:
+      context: ./clients/landlord
+    container_name: landlord_client
+    ports:
+      - "3080:80"
+    restart: unless-stopped
+    depends_on:
+      - landlord_server
   landlord_server:
     build:
-      context: ./servers/landlord
+      context: servers/backend
     container_name: landlord_server
     ports:
       - "3000:3000"
     volumes:
-      - ./servers/landlord:/app
+      - ./servers/backend:/app
       - /app/node_modules
     environment:
       - NODE_ENV=development
@@ -25,7 +34,5 @@ services:
       MONGO_INITDB_ROOT_PASSWORD: example
     volumes:
       - mongo-data:/data/db
-      - ./database/init.js:/docker-entrypoint-initdb.d/init-mongo.js:ro
-
 volumes:
   mongo-data:
