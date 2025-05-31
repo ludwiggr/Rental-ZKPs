@@ -1,3 +1,6 @@
 .idea
 .vscode
 *.txt
+
+
+*node_modules*
