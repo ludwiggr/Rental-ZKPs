@@ -6,6 +6,7 @@ import ListingsOverview from './pages/ListingsOverview';
 import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
 import CreateListing from "./pages/CreateListing";
+import ListingDetails from './pages/ListingDetails';
 
 // Layouts
 import MainLayout from './layouts/MainLayout';
@@ -23,6 +24,7 @@ function App() {
             <Route element={<MainLayout/>}>
                 <Route path="/create-listing" element={<CreateListing/>}/>
             </Route>
+            <Route path="/listing/:id" element={<ListingDetails />} />
             {/* Public Routes with optional layout */}
             <Route element={<AuthLayout/>}>
                 <Route path="/register" element={<RegisterPage/>}/>

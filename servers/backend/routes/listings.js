@@ -11,7 +11,7 @@ router.get('/', async (req, res) => {
     console.log("GET request received", req.body);
     let userId;
     try {
-        userId = login(req)
+        userId = check_authorization(req)
     } catch (err) {
         return res.status(401).json({message: 'Authorization failed'});
     }
@@ -32,7 +32,7 @@ router.post('/', async (req, res) => {
 
     let userId;
     try {
-        userId = login(req)
+        userId = check_authorization(req)
     } catch (err) {
         return res.status(401).json({message: 'Authorization failed'});
     }
@@ -55,8 +55,24 @@ router.post('/', async (req, res) => {
     }
 });
 
+router.get('/:id', async (req, res) => {
 
-function login(req) {
+    try {
+        check_authorization(req)
+    } catch (err) {
+        return res.status(401).json({message: 'Authorization failed'});
+    }
+    try {
+        const listing = await Listing.findById(req.params.id);
+        if (!listing) return res.status(404).json({ message: 'Listing not found' });
+
+        res.json({ listing });
+    } catch (err) {
+        res.status(500).json({ message: 'Server error' });
+    }
+});
+
+function check_authorization(req) {
     const authHeader = req.headers.authorization;
     if (!authHeader) throw new Error('Missing token');
 
@@ -66,6 +82,7 @@ function login(req) {
     const decoded = jwt.verify(token, JWT_SECRET);
     return decoded.userId;
 }
+
 
 
 module.exports = router;

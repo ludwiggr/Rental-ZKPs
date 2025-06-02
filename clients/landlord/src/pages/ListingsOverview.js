@@ -61,11 +61,29 @@ function Listings() {
 
             <div style={styles.grid}>
                 {listings.map((listing, index) => (
-                    <div key={index} style={styles.card}>
+                    <div key={index} style={{ ...styles.card, position: 'relative' }}>
+                        <button
+                            onClick={() => navigate(`/listing/${listing._id}`)}
+                            style={{
+                                position: 'absolute',
+                                top: '10px',
+                                right: '10px',
+                                backgroundColor: '#eee',
+                                border: 'none',
+                                borderRadius: '50%',
+                                width: '30px',
+                                height: '30px',
+                                cursor: 'pointer',
+                                fontWeight: 'bold',
+                            }}
+                            title="View details"
+                        >
+                            i
+                        </button>
                         <h3>{listing.name}</h3>
                         <p><strong>Address:</strong> {listing.address}</p>
                         <p><strong>Size:</strong> {listing.size} m²</p>
-                        <p><strong>Number of applicants:</strong> {listing.applicants.size()}</p>
+                        <p><strong>Number of applicants:</strong> {listing.applicants?.length || 0}</p>
                     </div>
                 ))}
             </div>
