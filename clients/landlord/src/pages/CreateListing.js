@@ -50,7 +50,7 @@ const CreateListing = () => {
                 setMessage(null);
             } else {
                 setMessage('Listing created successfully!');
-                navigate('/listing-overview')
+                navigate('/listings-overview')
             }
         } catch (err) {
             setError('Network or server error');
