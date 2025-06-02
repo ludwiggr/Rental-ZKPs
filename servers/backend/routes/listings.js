@@ -63,7 +63,7 @@ router.get('/:id', async (req, res) => {
         return res.status(401).json({message: 'Authorization failed'});
     }
     try {
-        const listing = await Listing.findById(req.params.id);
+        const listing = await Listing.findById(req.params.id).populate('applicants', 'email username');
         if (!listing) return res.status(404).json({ message: 'Listing not found' });
 
         res.json({ listing });
@@ -71,6 +71,40 @@ router.get('/:id', async (req, res) => {
         res.status(500).json({ message: 'Server error' });
     }
 });
+
+// POST api/listings/:id/apply
+router.post('/:id/apply', async (req, res) => {
+    let userId;
+    try {
+        userId = check_authorization(req)
+    } catch (err) {
+        return res.status(401).json({message: 'Authorization failed'});
+    }
+
+
+    try {
+        const listing = await Listing.findById(req.params.id);
+        if (!listing) {
+            return res.status(404).json({ message: 'Listing not found' });
+        }
+
+
+        // Check if user already applied
+        if (listing.applicants.includes(userId)) {
+            return res.status(400).json({ message: 'User already applied to this listing' });
+        }
+
+        // Add user to applicants
+        listing.applicants.push(userId);
+        await listing.save();
+
+        res.status(200).json({ message: 'Successfully applied to the listing' });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ message: 'Server error' });
+    }
+});
+
 
 function check_authorization(req) {
     const authHeader = req.headers.authorization;

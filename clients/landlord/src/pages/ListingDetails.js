@@ -31,11 +31,22 @@ const ListingDetails = () => {
     if (!listing) return <p>Loading...</p>;
 
     return (
-        <div style={{ padding: '2rem', maxWidth: '600px', margin: '0 auto' }}>
+        <div style={{ padding: '2rem', maxWidth: '600px', margin: '0 auto', fontFamily: 'Arial, sans-serif' }}>
             <h2>{listing.name}</h2>
+            <h3>General infos</h3>
             <p><strong>Address:</strong> {listing.address}</p>
             <p><strong>Size:</strong> {listing.size} sqm</p>
             <p><strong>Created by:</strong> {listing.createdBy}</p>
+            <h3>Applicants</h3>
+            {listing.applicants && listing.applicants.length > 0 ? (
+                <ul>
+                    {listing.applicants.map((user) => (
+                        <li key={user._id}>{user.email}, {user.username}</li>
+                    ))}
+                </ul>
+            ) : (
+                <p>No applicants yet.</p>
+            )}
         </div>
     );
 };
