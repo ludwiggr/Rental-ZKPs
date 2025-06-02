@@ -55,7 +55,7 @@ function Listings() {
                         cursor: 'pointer',
                     }}
                 >
-                    ➕ New Listing
+                    New Listing
                 </button>
             </div>
 
