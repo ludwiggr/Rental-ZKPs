@@ -72,7 +72,32 @@ router.get('/:id', async (req, res) => {
     }
 });
 
-// POST api/listings/:id/apply
+router.delete('/:id', async (req, res) => {
+    let userId;
+    try {
+        userId = check_authorization(req)
+    } catch (err) {
+        return res.status(401).json({message: 'Authorization failed'});
+    }
+    try {
+        const listing = await Listing.findById(req.params.id);
+        if (!listing) {
+            return res.status(404).json({ message: 'Listing not found' });
+        }
+
+        // Make sure the current user is the creator
+        if (listing.createdBy.toString() !== userId) {
+            return res.status(403).json({ message: 'Not authorized to delete this listing' });
+        }
+
+        await Listing.findByIdAndDelete(req.params.id);
+        res.status(200).json({ message: 'Listing deleted successfully' });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: 'Server error' });
+    }
+});
+
 router.post('/:id/apply', async (req, res) => {
     let userId;
     try {
