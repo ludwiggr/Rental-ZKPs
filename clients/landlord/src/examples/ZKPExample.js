@@ -37,7 +37,7 @@ async function landlordExample() {
       console.log('Rental proof is valid:', isValid);
     }
   } catch (error) {
-    console.error('Error in landlord example:', error);
+    console.error('Error in backend example:', error);
   }
 }
 
