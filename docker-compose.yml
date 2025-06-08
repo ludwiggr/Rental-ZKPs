@@ -8,6 +8,8 @@ services:
     restart: unless-stopped
     depends_on:
       - backend_server_service
+    expose:
+      - "80"
   landlord_client_service:
     build:
       context: ./clients/landlord
@@ -19,6 +21,8 @@ services:
     build:
       context: servers/backend
     container_name: backend-server-container
+    expose:
+      - "3000"
     volumes:
       - ./servers/backend:/app
       - /app/node_modules
@@ -30,8 +34,8 @@ services:
   database_service:
     image: mongo:latest
     container_name: database-container
-    ports:
-      - "27017:27017"
+    expose:
+      - "27017"
     environment:
       MONGO_INITDB_ROOT_USERNAME: root
       MONGO_INITDB_ROOT_PASSWORD: example

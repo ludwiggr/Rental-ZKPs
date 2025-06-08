@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, {useState} from 'react';
+import {useNavigate} from 'react-router-dom';
 
 function Login() {
     const [email, setEmail] = useState('');
@@ -11,12 +11,12 @@ function Login() {
         e.preventDefault();
 
         try {
-            const res = await fetch('http://backend_server_service:3000/api/login', {
+            const res = await fetch('/api/login', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ email, password }),
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({email, password}),
             });
-
+            console.log('test');
             const data = await res.json();
 
             if (!res.ok) {
@@ -26,9 +26,14 @@ function Login() {
 
             localStorage.setItem('token', data.token); // Save token
             setMessage('Login successful!');
-            navigate('/listings-overview');
+
         } catch (err) {
             setMessage('Error connecting to server');
+        }
+        try {
+            navigate('/listings-overview');
+        } catch (e) {
+            setMessage('Navigation failed');
         }
     };
 
