@@ -18,7 +18,7 @@ async function renterExample() {
     }
     console.log('Proof submitted successfully');
 
-    // Request landlord proof
+    // Request backend proof
     const proofRequest = renterService.requestLandlordProof({
       minPropertyValue: 400000
     });

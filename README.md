@@ -73,7 +73,7 @@ cd Rental-ZKPs
 ```bash
 # Install client dependencies
 cd clients/renter && npm install
-cd ../landlord && npm install
+cd ../backend && npm install
 
 # Install server dependencies
 cd ../../servers/employer-api && npm install
@@ -105,8 +105,8 @@ cd ../government-api && npm start
 # Start renter client
 cd clients/renter && npm start
 
-# Start landlord client
-cd ../landlord && npm start
+# Start backend client
+cd ../backend && npm start
 ```
 
 ## Development

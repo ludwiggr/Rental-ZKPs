@@ -5,6 +5,7 @@ import {Routes, Route} from 'react-router-dom';
 import ListingsOverview from './pages/ListingsOverview';
 import CreateListing from "./pages/CreateListing";
 import ListingDetails from './pages/ListingDetails';
+import DummyLandingPage from './pages/DummyLandingPage';
 
 // Layouts
 import MainLayout from './layouts/MainLayout';
@@ -13,6 +14,10 @@ import MainLayout from './layouts/MainLayout';
 function App() {
     return (
         <Routes>
+            {/* Public Routes with optional layout */}
+            <Route element={<MainLayout/>}>
+                <Route path="/landing" element={<DummyLandingPage/>}/>
+            </Route>
             {/* Public Routes with optional layout */}
             <Route element={<MainLayout/>}>
                 <Route path="/listings-overview" element={<ListingsOverview/>}/>

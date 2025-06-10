@@ -5,8 +5,9 @@ function Login() {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [message, setMessage] = useState('');
+    const [selectedRole, setSelectedRole] = useState('');
 
-    const handleLogin = async (e) => {
+    const handleLogin = async (e, role) => {
         e.preventDefault();
 
         try {
@@ -26,7 +27,12 @@ function Login() {
             //localStorage.setItem('token', data.token); // Save token
 
             setMessage('Login successful!');
-            window.location.href = `http://landlord.localhost/listings-overview?token=${encodeURIComponent(data.token)}`;
+            if (role === 'landlord') {
+                window.location.href = `http://landlord.localhost/landing?token=${encodeURIComponent(data.token)}`;
+            } else if (role === 'tenant') {
+                window.location.href = `http://tenant.localhost/landing?token=${encodeURIComponent(data.token)}`;
+            }
+
 
 
         } catch (err) {
@@ -38,7 +44,7 @@ function Login() {
     return (
         <div style={styles.container}>
             <h2>Login</h2>
-            <form onSubmit={handleLogin} style={styles.form}>
+            <form onSubmit={(e) => handleLogin(e, selectedRole)} style={styles.form}>
                 <input
                     type="text"
                     placeholder="Email"
@@ -55,7 +61,14 @@ function Login() {
                     required
                     style={styles.input}
                 />
-                <button type="submit" style={styles.button}>Login</button>
+                <div style={styles.buttonContainer}>
+                    <button type="submit" style={styles.button} onClick={() => setSelectedRole('landlord')}>
+                        Login as Landlord
+                    </button>
+                    <button type="submit" style={styles.button} onClick={() => setSelectedRole('tenant')}>
+                        Login as Tenant
+                    </button>
+                </div>
             </form>
             <p>{message}</p>
         </div>

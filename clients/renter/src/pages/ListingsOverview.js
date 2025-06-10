@@ -11,7 +11,7 @@ function Listings() {
             const token = localStorage.getItem('token');
 
             try {
-                const res = await fetch('/api/listings?mine=true', {
+                const res = await fetch('/api/listings?mine=false', {
                     headers: {
                         Authorization: `Bearer ${token}`,
                     },
@@ -32,33 +32,45 @@ function Listings() {
         fetchListings();
     }, [navigate]);
 
+    const applyToListing = async (listingId) => {
+        console.log(listingId);
+        try {
+            const token = localStorage.getItem('token')
+
+            const response = await fetch(`/api/listings/${listingId}/apply`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    Authorization: `Bearer ${token}`,
+                },
+            });
+
+            const data = await response.json();
+
+            if (!response.ok) {
+                throw new Error(data.message || 'Something went wrong');
+            }
+
+            alert('Successfully applied to the listing');
+        } catch (error) {
+            console.error('Error applying:', error);
+            alert(error.message);
+        }
+    };
+
     if (loading) return <div style={styles.loading}>Loading...</div>;
 
     return (
         <div style={styles.page}>
             <div style={styles.header}>
                 <h2>Your Listings</h2>
-                <button
-                    onClick={() => navigate('/create-listing')}
-                    style={{
-                        padding: '0.5rem 1rem',
-                        fontSize: '1rem',
-                        borderRadius: '6px',
-                        backgroundColor: '#007bff',
-                        color: '#fff',
-                        border: 'none',
-                        cursor: 'pointer',
-                    }}
-                >
-                    New Listing
-                </button>
             </div>
 
             <div style={styles.grid}>
                 {listings.map((listing, index) => (
                     <div key={index} style={{ ...styles.card, position: 'relative' }}>
                         <button
-                            onClick={() => navigate(`/listing/${listing._id}`)}
+                            onClick={() => applyToListing(listing._id)}
                             style={{
                                 position: 'absolute',
                                 top: '10px',
@@ -73,7 +85,7 @@ function Listings() {
                             }}
                             title="View details"
                         >
-                            i
+                            apply
                         </button>
                         <h3>{listing.name}</h3>
                         <p><strong>Address:</strong> {listing.address}</p>
@@ -96,16 +108,6 @@ const styles = {
         justifyContent: 'space-between',
         alignItems: 'center',
         marginBottom: '1rem',
-    },
-    addButton: {
-        fontSize: '1.5rem',
-        background: '#007bff',
-        color: 'white',
-        border: 'none',
-        borderRadius: '50%',
-        width: '40px',
-        height: '40px',
-        cursor: 'pointer',
     },
     grid: {
         display: 'grid',

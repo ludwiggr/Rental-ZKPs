@@ -17,6 +17,17 @@ services:
     restart: unless-stopped
     depends_on:
       - backend_server_service
+    expose:
+      - "80"
+  tenant_client_service:
+    build:
+      context: ./clients/renter
+    container_name: tenant-client-container
+    restart: unless-stopped
+    depends_on:
+      - backend_server_service
+    expose:
+      - "80"
   backend_server_service:
     build:
       context: servers/backend
@@ -51,6 +62,7 @@ services:
     depends_on:
       - login_client_service
       - landlord_client_service
+      - tenant_client_service
       - backend_server_service
 volumes:
   mongo-data:
