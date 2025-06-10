@@ -14,7 +14,7 @@ app.use(cors({
 }));
 
 // Connect to MongoDB
-mongoose.connect('mongodb://root:example@database:27017/db?authSource=admin')
+mongoose.connect('mongodb://root:example@database_service:27017/db?authSource=admin')
     .then(() => console.log('MongoDB connected'))
     .catch(err => console.error(err));
 

@@ -6,7 +6,13 @@ const listingSchema = new mongoose.Schema({
     size: { type: String, required: true },
     createdAt: { type: Date, default: Date.now },
     createdBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
-    applicants: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }]
+    applicants: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
+    price: { type: Number, required: true },
+    type: {
+        type: String,
+        enum: ['flat', 'house', 'studio', 'apartment'], // add more if needed
+        required: true
+    }
 });
 
 console.log("Schema 'Listing' created");
