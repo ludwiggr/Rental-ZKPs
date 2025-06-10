@@ -7,15 +7,19 @@ function Listings() {
     const navigate = useNavigate();
 
     useEffect(() => {
+        const getToken = async () => {
+            const urlParams = new URLSearchParams(window.location.search);
+            const token = urlParams.get('token');
+            if (!token) {
+                window.location.href = `http://login.localhost/login`;
+            }
+            localStorage.setItem('token', token);
+        }
         const fetchListings = async () => {
             const token = localStorage.getItem('token');
-            if (!token) {
-                navigate('/login');
-                return;
-            }
 
             try {
-                const res = await fetch('http://localhost:3000/api/listings?mine=true', {
+                const res = await fetch('/api/listings?mine=true', {
                     headers: {
                         Authorization: `Bearer ${token}`,
                     },
@@ -33,7 +37,7 @@ function Listings() {
                 setLoading(false);
             }
         };
-
+        getToken();
         fetchListings();
     }, [navigate]);
 

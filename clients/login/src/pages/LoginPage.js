@@ -5,7 +5,6 @@ function Login() {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [message, setMessage] = useState('');
-    const navigate = useNavigate();
 
     const handleLogin = async (e) => {
         e.preventDefault();
@@ -24,17 +23,16 @@ function Login() {
                 return;
             }
 
-            localStorage.setItem('token', data.token); // Save token
+            //localStorage.setItem('token', data.token); // Save token
+
             setMessage('Login successful!');
+            window.location.href = `http://landlord.localhost/listings-overview?token=${encodeURIComponent(data.token)}`;
+
 
         } catch (err) {
             setMessage('Error connecting to server');
         }
-        try {
-            navigate('/listings-overview');
-        } catch (e) {
-            setMessage('Navigation failed');
-        }
+
     };
 
     return (

@@ -3,14 +3,11 @@ import {Routes, Route} from 'react-router-dom';
 
 // Import page components
 import ListingsOverview from './pages/ListingsOverview';
-import LoginPage from './pages/LoginPage';
-import RegisterPage from './pages/RegisterPage';
 import CreateListing from "./pages/CreateListing";
 import ListingDetails from './pages/ListingDetails';
 
 // Layouts
 import MainLayout from './layouts/MainLayout';
-import AuthLayout from './layouts/AuthLayout';
 
 
 function App() {
@@ -25,14 +22,6 @@ function App() {
                 <Route path="/create-listing" element={<CreateListing/>}/>
             </Route>
             <Route path="/listing/:id" element={<ListingDetails />} />
-            {/* Public Routes with optional layout */}
-            <Route element={<AuthLayout/>}>
-                <Route path="/register" element={<RegisterPage/>}/>
-            </Route>
-            {/* Public Routes with optional layout */}
-            <Route element={<AuthLayout/>}>
-                <Route path="/login" element={<LoginPage/>}/>
-            </Route>
         </Routes>
 
     );
