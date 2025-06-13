@@ -91,13 +91,13 @@ chmod +x shared/role-scripts/*.sh
 1. Start the server APIs:
 ```bash
 # Start employer API
-cd servers/employer-api && npm start
+cd ./servers/employer-api && npm start
 
 # Start bank API
-cd ../bank-api && npm start
+cd servers/bank-api && npm start
 
-# Start government API
-cd ../government-api && npm start
+# Start government API #TODO: Add government API
+cd servers/government-api && npm start
 ```
 
 2. Start the client applications:
@@ -106,7 +106,7 @@ cd ../government-api && npm start
 cd clients/renter && npm start
 
 # Start landlord client
-cd ../landlord && npm start
+cd clients/landlord && npm start
 ```
 
 ## Development

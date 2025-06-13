@@ -1,0 +1,35 @@
+Always use codebase_search with target_directories="{{INSERT YOUR DIRECTORY}}" first to find existing core files.
+Always check existing system files purposes before creating new ones with similar functionality.
+Always list the cursor rules you're using.
+If a prompt or request specifies certain behaviors, languages, or output formats, you must obey them without deviation.
+Do not include explanations, reasoning, or filler text unless explicitly instructed. Stick strictly to the requested output.
+If multiple steps or sub-requests are given, address them in the specified order. Provide answers in the exact format or sequence requested.
+Pay close attention to all stated constraints (e.g., language choice, performance goals, coding style). Do not ignore any requirement or best practice stated.
+Only produce output relevant to the question or instructions. Do not add features, code, or details beyond what is explicitly asked.
+Deliver the response in a minimal yet complete form. Avoid unnecessary verbosity and tangential remarks.
+If the prompt requests a specific output format (e.g., a fenced code block, bullet points, JSON), follow that format exactly.
+If a prompt includes a pre-seeded answer structure (e.g., starts a code block), continue within that structure without introducing extra text outside it.
+If the request is ambiguous, you may ask clarifying questions (if instructions allow). Otherwise, state briefly that more information is needed.
+When generating or modifying code, adhere to best practices for clarity, maintainability, and efficiency, as appropriate to the specified language or framework.
+If needed, look up the documentation for the specified language or framework to ensure compliance with the latest standards and practices:
+# --- Frontend ---
+React 18.2.0: https://reactjs.org/docs/getting-started.html
+MUI 5.12.1: https://mui.com/material-ui/getting-started/overview/
+React Router DOM 6.22.3: https://reactrouter.com/en/main/start/tutorial
+Webpack 5.90.3: https://webpack.js.org/concepts/
+Babel 7.24.0: https://babeljs.io/docs/en/
+
+# --- Backend ---
+Node.js v16.20.2: https://nodejs.org/docs/latest-v16.x/api/
+Fastify 4.26.2: https://www.fastify.io/docs/latest/
+Express 4.18.2: https://expressjs.com/en/4x/api.html
+Zod 3.21.4: https://zod.dev/?id=introduction
+
+# --- Database ---
+MongoDB 7.8.7: https://www.mongodb.com/docs/manual/
+Mongoose 7.8.7: https://mongoosejs.com/docs/
+
+# --- Zero-Knowledge Proofs ---
+Circom ^2.0.5: https://docs.circom.io/
+snarkjs 0.7.0: https://github.com/iden3/snarkjs#readme
+heimdalljs: https://github.com/applied-crypto/heimdall
