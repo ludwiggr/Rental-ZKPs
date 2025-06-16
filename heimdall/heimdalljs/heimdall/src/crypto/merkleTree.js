@@ -6,7 +6,7 @@ class MerkleTree {
      * @param [tree] {MerkleTree} Takes merkle tree object and imports tree without checking it for validity,
      * input gets ignored.
      */
-    constructor (input, hasher, tree = undefined) {
+    constructor(input, hasher, tree = undefined) {
         this.hasher = hasher;
         if (typeof tree === "undefined") {
             this.depth = Math.log2(input.length);
@@ -116,9 +116,9 @@ class Proof {
         let hash = this.lemma[0];
         for (let i = 0; i < this.path.length; i++) {
             if (this.path[i]) {
-               hash = this.nodeHash(this.lemma[i + 1], hash);
+                hash = this.nodeHash(this.lemma[i + 1], hash);
             } else {
-               hash = this.nodeHash(hash, this.lemma[i + 1]);
+                hash = this.nodeHash(hash, this.lemma[i + 1]);
             }
         }
         return hash === this.lemma[this.lemma.length - 1];

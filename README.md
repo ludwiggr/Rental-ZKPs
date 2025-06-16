@@ -1,139 +1,252 @@
-# Rental-ZKPs
+# Rental-ZKPs: Zero-Knowledge Proofs for Rental Applications
 
-A zero-knowledge proof system for rental applications, allowing secure verification of income, credit scores, and property ownership without revealing sensitive information.
-
-## Prerequisites
-
-- Node.js v16.20.2 or later
-- heimdalljs command-line tool installed and available in PATH
-- MongoDB 7.8.7 or later
+This project implements zero-knowledge proofs (ZKPs) for rental applications using the Heimdall credential system. It allows users to prove their income meets certain criteria without revealing the actual income amount.
 
 ## Project Structure
 
 ```
-.
-├── clients/
-│   ├── renter/          # Renter client application
-│   └── landlord/        # Landlord client application
+Rental-ZKPs/
+├── heimdall/                    # Heimdall credential system
+│   └── heimdalljs/
+│       └── heimdall/
+│           ├── src/             # Source code
+│           └── cli/             # Command-line tools
 ├── servers/
-│   ├── employer-api/    # Employer verification API
-│   ├── bank-api/        # Bank verification API
-│   └── government-api/  # Government property verification API
-└── shared/
-    └── role-scripts/    # heimdalljs scripts for each role
+│   └── employer-api/            # Employer verification API
+│       ├── src/
+│       └── temp/                # Generated files
+└── README.md
 ```
 
-## Zero-Knowledge Proof Flows
+## Features
 
-### 1. Income Verification Flow
-1. Renter requests income proof from employer
-2. Employer generates proof using `employer-verify.sh`
-3. Renter verifies proof using `verify-proof.sh`
-4. Renter sends proof to landlord
-5. Landlord verifies proof using `verify-proof.sh`
+- **Income Verification**: Generate ZKPs to prove income meets rental requirements
+- **Privacy-Preserving**: Income amount is never revealed, only that it meets criteria
+- **Credential System**: Based on Heimdall's attribute-based credential system
+- **REST API**: Simple HTTP API for income verification
 
-### 2. Credit Check Flow
-1. Renter requests credit proof from bank
-2. Bank generates proof using `bank-verify.sh`
-3. Renter verifies proof using `verify-proof.sh`
-4. Renter sends proof to landlord
-5. Landlord verifies proof using `verify-proof.sh`
+## API Endpoints
 
-### 3. Property Ownership Flow
-1. Landlord requests property proof from government
-2. Government generates proof using `government-verify.sh`
-3. Landlord verifies proof using `verify-proof.sh`
-4. Landlord sends proof to renter
-5. Renter verifies proof using `verify-proof.sh`
+### POST /verify-income
 
-## Role Scripts
+Verifies that a user's income meets the rental requirements.
 
-The `shared/role-scripts/` directory contains the following heimdalljs scripts:
+**Request:**
+```json
+{
+  "income": "2500",
+  "employerId": "42"
+}
+```
 
-- `employer-verify.sh`: Generates income verification proofs
-- `bank-verify.sh`: Generates credit score verification proofs
-- `government-verify.sh`: Generates property ownership proofs
-- `verify-proof.sh`: Verifies any type of proof
+**Response:**
+```json
+{
+  "success": true,
+  "proof": {
+    "type": "attribute",
+    "output": {
+      "meta": {
+        "type": "Income",
+        "revoked": false,
+        "delegatable": false
+      },
+      "content": {
+        "attribute": "2500",
+        "position": 8
+      }
+    },
+    "proof": {
+      "pi_a": [...],
+      "pi_b": [...],
+      "pi_c": [...]
+    },
+    "publicSignals": [...]
+  }
+}
+```
 
-Each script follows the heimdalljs command-line pattern:
-1. Generate keys for issuer and holder
-2. Create credential attributes
-3. Generate credential
-4. Create proof presentation
+## Heimdall System Modifications
 
-## Installation
+### Overview
+
+The Heimdall credential system was modified to support income verification use cases. Key changes include:
+
+1. **Credential ID Management**: Fixed revocation tree index overflow issues
+2. **Attribute Padding**: Ensured Merkle tree compatibility with power-of-2 requirements
+3. **File Path Management**: Improved file generation and storage locations
+
+### Technical Details
+
+#### 1. Credential Structure
+
+Heimdall credentials have the following structure:
+- **Meta attributes (8)**: ID, type, public keys, registry, expiration, delegatable, empty
+- **User attributes (8)**: Income, name, status, etc. (padded to ensure power-of-2 total)
+
+```
+Credential attributes (16 total):
+[0]  ID (e.g., "12345")
+[1]  Type (e.g., "Income")
+[2]  Holder public key [0]
+[3]  Holder public key [1]
+[4]  Revocation registry URL
+[5]  Expiration timestamp
+[6]  Delegatable flag
+[7]  Empty string
+[8]  Income value (e.g., "2500") ← Target for ZKP
+[9]  First name (e.g., "John")
+[10] Last name (e.g., "Jones")
+[11] Status (e.g., "No Debt")
+[12] Status2 (e.g., "Rich")
+[13] Empty (padding)
+[14] Empty (padding)
+[15] Empty (padding)
+```
+
+#### 2. Revocation Tree Constraints
+
+- **Maximum credential ID**: `2^13 * 252 = 2,064,384`
+- **Revocation tree size**: 8192 leaves (2^13)
+- **Leaf size**: 252 bits per leaf
+
+**Issue Fixed**: Original implementation used `Date.now()` for credential IDs, which exceeded the revocation tree limits.
+
+**Solution**: Use smaller, sequential IDs (e.g., 12345) that fit within the revocation tree constraints.
+
+#### 3. Merkle Tree Requirements
+
+- **Input length**: Must be a power of 2
+- **Supported sizes**: 2, 4, 8, 16, 32, 64, 128, 256, 512, 1024, 2048, 4096, 8192, etc.
+
+**Issue Fixed**: Original attribute arrays didn't result in power-of-2 totals.
+
+**Solution**: Pad user attributes to ensure total count is a power of 2 (16 in this case).
+
+#### 4. File Management
+
+**Issue Fixed**: Files were being generated in incorrect locations.
+
+**Solution**: 
+- Use absolute paths in CLI commands
+- Generate all files in `/temp` directory
+- Ensure consistent file locations across the system
+
+### Modified Files
+
+#### `heimdall/heimdalljs/heimdall/cli/heimdalljs-pres-attribute.js`
+- Removed debug logging
+- Improved error handling
+
+#### `heimdall/heimdalljs/heimdall/src/presentation/attribute.js`
+- Removed debug logging
+- Cleaned up AttributePresentation constructor
+
+#### `heimdall/heimdalljs/heimdall/src/crypto/merkleTree.js`
+- Removed debug logging
+- Cleaned up MerkleTree constructor and generateProof method
+
+#### `servers/employer-api/src/index.ts`
+- Fixed credential ID generation (use 12345 instead of timestamp)
+- Added attribute padding (8 elements instead of 5)
+- Fixed file path construction
+- Improved presentation generation script
+- Removed debug logging
+
+## Setup and Installation
+
+### Prerequisites
+
+- Node.js (v16 or higher)
+- npm or yarn
+
+### Installation
 
 1. Clone the repository:
 ```bash
-git clone https://github.com/yourusername/Rental-ZKPs.git
+git clone <repository-url>
 cd Rental-ZKPs
 ```
 
-2. Install dependencies for each component:
+2. Install dependencies:
 ```bash
-# Install client dependencies
-cd clients/renter && npm install
-cd ../landlord && npm install
-
-# Install server dependencies
-cd ../../servers/employer-api && npm install
-cd ../bank-api && npm install
-cd ../government-api && npm install
+cd servers/employer-api
+npm install
 ```
 
-3. Make the role scripts executable:
+3. Start the API server:
 ```bash
-chmod +x shared/role-scripts/*.sh
+npm start
 ```
 
-## Running the Application
+The server will run on `http://localhost:3003`.
 
-1. Start the server APIs:
-```bash
-# Start employer API
-cd ./servers/employer-api && npm start
+## Usage
 
-# Start bank API
-cd servers/bank-api && npm start
-
-# Start government API #TODO: Add government API
-cd servers/government-api && npm start
-```
-
-2. Start the client applications:
-```bash
-# Start renter client
-cd clients/renter && npm start
-
-# Start landlord client
-cd clients/landlord && npm start
-```
-
-## Development
-
-### Adding New Proof Types
-
-To add a new type of proof:
-
-1. Create a new script in `shared/role-scripts/` following the pattern of existing scripts
-2. Update the client services to use the new script
-3. Add appropriate UI components in the client applications
-
-### Testing
-
-Each component has its own test suite. Run tests using:
+### Generate Income Proof
 
 ```bash
-npm test
+curl -X POST http://localhost:3003/verify-income \
+  -H "Content-Type: application/json" \
+  -d '{"income": "2500", "employerId": "42"}'
 ```
 
-## Security Considerations
+### Verify Generated Files
 
-- All proofs are generated using heimdalljs command-line tool
-- Private keys are stored securely and never exposed
-- Proofs are verified locally before being shared
-- All sensitive data is kept private and only proven, never revealed
+All generated files are stored in `servers/employer-api/temp/`:
+
+- `employer_attr_issuer.json` - Input attributes
+- `employer_cred_holder.json` - Generated credential
+- `employer_holder_pk.json` - Holder public key
+- `employer_holder_sk.txt` - Holder secret key
+- `employer_issuer_pk.json` - Issuer public key
+- `employer_issuer_sk.txt` - Issuer secret key
+- `employer_pres_attribute.json` - Generated presentation
+
+## Troubleshooting
+
+### Common Issues
+
+1. **"No valid in index" error**: 
+   - Ensure credential ID is less than 2,064,384
+   - Check that attributes array results in power-of-2 total
+
+2. **"Length of input must be pow of two" error**:
+   - Pad user attributes to ensure total count is 16 (or other power of 2)
+
+3. **"Proof file was not generated" error**:
+   - Check file paths in CLI commands
+   - Ensure all files are generated in `/temp` directory
+
+### Debug Mode
+
+To enable debug logging, add console.log statements to the relevant files:
+
+```javascript
+// In heimdalljs-pres-attribute.js
+console.log("Credential attributes:", credential.attributes);
+
+// In attribute.js
+console.log("Merkle tree input:", cred.attributes);
+
+// In merkleTree.js
+console.log("MerkleTree input length:", input.length);
+```
+
+## Contributing
+
+1. Fork the repository
+2. Create a feature branch
+3. Make your changes
+4. Add tests if applicable
+5. Submit a pull request
 
 ## License
 
- GPL-3.0 license
+[Add your license information here]
+
+## Acknowledgments
+
+- Based on the Heimdall credential system
+- Uses Poseidon hash function for zero-knowledge proofs
+- Implements Groth16 zk-SNARK protocol

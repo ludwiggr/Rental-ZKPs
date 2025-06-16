@@ -1,5 +1,5 @@
-const {stringifyBigInts} = require("../util");
-const {PresentationTypes, Presentation} = require("./presentation");
+const { stringifyBigInts } = require("../util");
+const { PresentationTypes, Presentation } = require("./presentation");
 
 class AttributePresentation extends Presentation {
     constructor(
@@ -30,7 +30,6 @@ class AttributePresentation extends Presentation {
         this.output.content = {
             attribute: cred.attributes[index]
         };
-
     }
 
     async verify(hasher) {
@@ -61,4 +60,4 @@ class AttributePresentation extends Presentation {
     }
 }
 
-module.exports = {AttributePresentation};
+module.exports = { AttributePresentation };

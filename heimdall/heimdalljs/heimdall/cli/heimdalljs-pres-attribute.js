@@ -1,12 +1,12 @@
 #!/usr/bin/env node
-const {program} = require("commander");
+const { program } = require("commander");
 const fs = require("fs/promises");
-const {poseidonHash} = require("../src/crypto/poseidon");
-const {AttributePresentation} = require("../src/presentation/attribute");
-const {stringifyBigInts} = require("../src/util");
-const {getSecretKey, getRevocationTree} = require("./util");
-const {merklePoseidon} = require("../src/crypto/poseidon.js");
-const {signPoseidon} = require("../circomlib/eddsa.js");
+const { poseidonHash } = require("../src/crypto/poseidon");
+const { AttributePresentation } = require("../src/presentation/attribute");
+const { stringifyBigInts } = require("../src/util");
+const { getSecretKey, getRevocationTree } = require("./util");
+const { merklePoseidon } = require("../src/crypto/poseidon.js");
+const { signPoseidon } = require("../circomlib/eddsa.js");
 
 program.arguments("<index>")
     .option("-d, --destination <Path>", "Path for storing the revocation file",
@@ -53,7 +53,7 @@ const generatePresentationAttribute = async (index, options) => {
 program.action((index, options) => {
     generatePresentationAttribute(index, options).then(res => {
         fs.writeFile(options.destination, JSON.stringify(stringifyBigInts(res)))
-            .then(() => {process.exit();})
+            .then(() => { process.exit(); })
             .catch(console.log);
     }).catch(console.log);
 });
