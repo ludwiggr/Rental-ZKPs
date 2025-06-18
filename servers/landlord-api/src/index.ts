@@ -8,7 +8,7 @@ import fs from 'fs/promises';
 const execAsync = promisify(exec);
 
 const app = express();
-const port = process.env.PORT || 3001;
+const port = process.env.PORT || 3004;
 
 // Configure CORS
 app.use(cors({
@@ -87,9 +87,8 @@ app.post('/verify-proof/:index', async (req, res) => {
     await fs.writeFile(proofPath, JSON.stringify(proof));
 
     // Verify the proof
-    const result = await execAsync('heimdalljs pres verify', {
-      cwd: workDir,
-      input: JSON.stringify(proof)
+    const result = await execAsync('heimdalljs pres verify proof_to_verify.json', {
+      cwd: workDir
     });
 
     const verificationResult = result.stdout.includes('Verification successful');

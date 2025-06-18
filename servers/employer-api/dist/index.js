@@ -7,6 +7,7 @@ const { exec } = require('child_process');
 const { promisify } = require('util');
 const path = require('path');
 const fs = require('fs/promises');
+const fsSync = require('fs'); // Add sync version of fs
 const execAsync = promisify(exec);
 const HEIMDALLJS_PATH = path.join(__dirname, '..', '..', '..', 'heimdall', 'heimdalljs', 'heimdall', 'cli');
 const TEMP_DIR = path.join(process.cwd(), 'temp');
@@ -77,20 +78,23 @@ app.post('/verify-income', async (req, res) => {
         }
         console.log('Generating ZKP for income:', incomeValue);
         // Create working directory for files
-        const workDir = path.join(process.cwd(), 'temp');
+        const workDir = path.join(__dirname, '..', 'temp');
         await fs.mkdir(workDir, { recursive: true });
         console.log('Working directory:', workDir);
         // Generate unique timestamp for this request
         const requestTimestamp = Date.now();
         console.log('Using timestamp:', requestTimestamp);
-        // Create attributes file for ZKP (short array, like in presenation_marc_heimdall.js)
+        // Create attributes file for ZKP (padded to 8 elements for total of 16 attributes)
         const attrPath = path.join(workDir, 'employer_attr_issuer.json');
         const attributes = [
             incomeValue.toString(), // 0: income value
             "John", // 1: first name
             "Jones", // 2: last name
             "No Debt", // 3: status
-            "Rich" // 4: status2
+            "Rich", // 4: status2
+            "", // 5: empty (padding)
+            "", // 6: empty (padding)
+            "" // 7: empty (padding)
         ];
         console.log('Writing attributes:', attributes);
         await fs.writeFile(attrPath, JSON.stringify(attributes));
@@ -119,12 +123,12 @@ app.post('/verify-income', async (req, res) => {
             await fs.writeFile(path.join(workDir, 'employer_holder_pk.json'), holderPubKeyOutput.stdout);
             await fs.unlink(holderSkPath); // Clean up temp file
             console.log('Holder public key generated');
-            // Create credential
+            // Create credential with smaller ID to fit in revocation tree
             console.log('Creating credential...');
             const credentialFileName = 'employer_cred_holder.json';
             await execAsync(`node ${path.join(HEIMDALLJS_PATH, 'heimdalljs-cred-new.js')} \
         --attributes employer_attr_issuer.json \
-        --id ${requestTimestamp} \
+        --id 12345 \
         --publicKey employer_holder_pk.json \
         --expiration 365 \
         --type Income \
@@ -134,7 +138,7 @@ app.post('/verify-income', async (req, res) => {
         --destination ${credentialFileName}`, { cwd: workDir });
             console.log('Credential created');
             // Generate presentation
-            const presentationFileName = path.join(workDir, 'employer_pres_attribute.json');
+            const presentationFileName = 'employer_pres_attribute.json';
             console.log('Generating presentation...');
             // Create a temporary script to generate the presentation
             const presentationScriptPath = path.join(workDir, 'generate_presentation.js');
@@ -144,17 +148,19 @@ const { execSync } = require("child_process");
 
 try {
   console.log("Generate presentation");
+  const credential = JSON.parse(fs.readFileSync("employer_cred_holder.json", "utf8"));
+
   execSync([
     "node ${path.join(HEIMDALLJS_PATH, 'heimdalljs-pres-attribute.js')} 8",
     "--expiration 100",
-    \`--challenge \${${requestTimestamp}}\`,
-    "--credential ${path.join(workDir, credentialFileName)}",
-    "--destination ${presentationFileName}",
+    "--challenge ${requestTimestamp}",
+    "--credential ${path.join(workDir, 'employer_cred_holder.json')}",
+    "--destination ${path.join(workDir, 'employer_pres_attribute.json')}",
     "--secretKey ${path.join(workDir, 'employer_holder_sk.txt')}",
     "--issuerPK ${path.join(workDir, 'employer_issuer_pk.json')}"
   ].join(" "), { stdio: 'inherit' });
 
-  if (!fs.existsSync("${presentationFileName}")) {
+  if (!fs.existsSync("employer_pres_attribute.json")) {
     console.error("Presentation file missing — generation failed");
     process.exit(1);
   }
@@ -164,12 +170,12 @@ try {
   console.error("Error:", err.message || err);
   process.exit(1);
 }`;
-            fs.writeFileSync(presentationScriptPath, presentationScript);
+            await fs.writeFile(presentationScriptPath, presentationScript);
             console.log('Running presentation generation script...');
             await execAsync(`node ${presentationScriptPath}`, { cwd: workDir, maxBuffer: 1024 * 1024 * 32 });
             console.log('Presentation generation completed');
             // Clean up the temporary script
-            fs.unlinkSync(presentationScriptPath);
+            await fs.unlink(presentationScriptPath);
             // Read the generated proof
             const proofPath = path.join(workDir, presentationFileName);
             try {
