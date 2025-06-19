@@ -72,7 +72,7 @@ class APIService {
   }
 
   static async sendProofToLandlord(proof) {
-    console.log('Sending proof to landlord...');
+    console.log('Sending proof to backend...');
     const response = await fetch(`${LANDLORD_API_URL}/receive-proof`, {
       method: 'POST',
       headers: {
@@ -83,7 +83,7 @@ class APIService {
 
     if (!response.ok) {
       const error = await response.json();
-      throw new Error(error.error || 'Failed to send proof to landlord');
+      throw new Error(error.error || 'Failed to send proof to backend');
     }
 
     const result = await response.json();

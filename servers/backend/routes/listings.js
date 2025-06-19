@@ -6,7 +6,6 @@ const jwt = require('jsonwebtoken');
 const {JWT_SECRET, JWT_EXPIRES_IN} = require('../config/config');
 
 
-// Get all listings of the current user
 router.get('/', async (req, res) => {
     console.log("GET request received", req.body);
     let userId;
@@ -38,13 +37,13 @@ router.post('/', async (req, res) => {
     }
 
     try {
-        const {name, address, size} = req.body;
+        const {name, address, size, price, type} = req.body;
 
-        if (!name || !address || !size) {
+        if (!name || !address || !size || !price || !type) {
             return res.status(400).json({error: 'Missing required fields'});
         }
 
-        const newListing = new Listing({name, address, size, createdBy: userId});
+        const newListing = new Listing({name, address, size, createdBy: userId, price, type});
 
         const savedListing = await newListing.save();
 
@@ -100,11 +99,15 @@ router.delete('/:id', async (req, res) => {
 
 router.post('/:id/apply', async (req, res) => {
     let userId;
+
+    console.log("Application received");
+
     try {
         userId = check_authorization(req)
     } catch (err) {
         return res.status(401).json({message: 'Authorization failed'});
     }
+
 
 
     try {

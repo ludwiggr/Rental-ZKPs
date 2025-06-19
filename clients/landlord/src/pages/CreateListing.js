@@ -6,6 +6,8 @@ const CreateListing = () => {
         name: '',
         address: '',
         size: '',
+        price: '',
+        type: ''
     });
     const navigate = useNavigate();
 
@@ -30,7 +32,7 @@ const CreateListing = () => {
         }
 
         try {
-            const res = await fetch('http://localhost:3000/api/listings', {
+            const res = await fetch('/api/listings', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -40,6 +42,8 @@ const CreateListing = () => {
                     name: formData.name,
                     address: formData.address,
                     size: Number(formData.size),
+                    price: Number(formData.price),
+                    type: formData.type,
                 }),
             });
 
@@ -97,6 +101,33 @@ const CreateListing = () => {
                         min="1"
                         style={{ width: '100%', padding: '0.5rem' }}
                     />
+                </div>
+                <div style={{ marginBottom: '1rem' }}>
+                    <label>Price:</label>
+                    <input
+                        type="number"
+                        name="price"
+                        value={formData.price}
+                        onChange={handleChange}
+                        required
+                        min="1"
+                        style={{ width: '100%', padding: '0.5rem' }}
+                    />
+                </div>
+                <div style={{ marginBottom: '1rem' }}>
+                    <label>Type:</label>
+                    <select
+                        name="type"
+                        value={formData.type}
+                        onChange={handleChange}
+                        required
+                        style={{ width: '100%', padding: '0.5rem' }}
+                    >
+                        <option value="flat">Flat</option>
+                        <option value="house">House</option>
+                        <option value="studio">Studio</option>
+                        <option value="apartment">Apartment</option>
+                    </select>
                 </div>
                 <button type="submit" style={{ padding: '0.5rem 1rem' }}>
                     Create Listing

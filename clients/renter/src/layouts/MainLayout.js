@@ -19,7 +19,7 @@ function NavBar() {
             justifyContent: 'space-between',
             alignItems: 'center',
         }}>
-            <h1>Landlord Interface</h1>
+            <h1>Tenant Interface</h1>
             <button
                 onClick={handleLogout}
                 style={{

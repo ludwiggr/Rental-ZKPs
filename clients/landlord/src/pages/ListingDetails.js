@@ -12,7 +12,7 @@ const ListingDetails = () => {
         const fetchListing = async () => {
             const token = localStorage.getItem('token');
             try {
-                const res = await fetch(`http://localhost:3000/api/listings/${id}`, {
+                const res = await fetch(`/api/listings/${id}`, {
                     headers: {
                         Authorization: `Bearer ${token}`,
                     },
@@ -34,7 +34,7 @@ const ListingDetails = () => {
         if (!window.confirm("Are you sure you want to delete this listing?")) return;
 
         try {
-            const res = await fetch(`http://localhost:3000/api/listings/${id}`, {
+            const res = await fetch(`/api/listings/${id}`, {
                 method: 'DELETE',
                 headers: { Authorization: `Bearer ${token}` }
             });

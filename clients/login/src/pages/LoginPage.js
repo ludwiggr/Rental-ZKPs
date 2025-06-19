@@ -1,22 +1,22 @@
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, {useState} from 'react';
+import {useNavigate} from 'react-router-dom';
 
 function Login() {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [message, setMessage] = useState('');
-    const navigate = useNavigate();
+    const [selectedRole, setSelectedRole] = useState('');
 
-    const handleLogin = async (e) => {
+    const handleLogin = async (e, role) => {
         e.preventDefault();
 
         try {
-            const res = await fetch('http://localhost:3000/api/login', {
+            const res = await fetch('/api/login', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ email, password }),
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({email, password}),
             });
-
+            console.log('test');
             const data = await res.json();
 
             if (!res.ok) {
@@ -24,18 +24,27 @@ function Login() {
                 return;
             }
 
-            localStorage.setItem('token', data.token); // Save token
+            //localStorage.setItem('token', data.token); // Save token
+
             setMessage('Login successful!');
-            navigate('/listings-overview');
+            if (role === 'landlord') {
+                window.location.href = `http://landlord.localhost/landing?token=${encodeURIComponent(data.token)}`;
+            } else if (role === 'tenant') {
+                window.location.href = `http://tenant.localhost/landing?token=${encodeURIComponent(data.token)}`;
+            }
+
+
+
         } catch (err) {
             setMessage('Error connecting to server');
         }
+
     };
 
     return (
         <div style={styles.container}>
             <h2>Login</h2>
-            <form onSubmit={handleLogin} style={styles.form}>
+            <form onSubmit={(e) => handleLogin(e, selectedRole)} style={styles.form}>
                 <input
                     type="text"
                     placeholder="Email"
@@ -52,7 +61,14 @@ function Login() {
                     required
                     style={styles.input}
                 />
-                <button type="submit" style={styles.button}>Login</button>
+                <div style={styles.buttonContainer}>
+                    <button type="submit" style={styles.button} onClick={() => setSelectedRole('landlord')}>
+                        Login as Landlord
+                    </button>
+                    <button type="submit" style={styles.button} onClick={() => setSelectedRole('tenant')}>
+                        Login as Tenant
+                    </button>
+                </div>
             </form>
             <p>{message}</p>
         </div>

@@ -170,8 +170,19 @@ cd Rental-ZKPs
 
 2. Install dependencies:
 ```bash
+<<<<<<< HEAD
+# Install client dependencies
+cd clients/renter && npm install
+cd ../backend && npm install
+
+# Install server dependencies
+cd ../../servers/employer-api && npm install
+cd ../bank-api && npm install
+cd ../government-api && npm install
+=======
 cd servers/employer-api
 npm install
+>>>>>>> master
 ```
 
 3. Start the API server:
