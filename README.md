@@ -194,39 +194,7 @@ The server will run on `http://localhost:3003`.
 
 ## Usage
 
-<<<<<<< HEAD
-# Start bank API
-cd ../bank-api && npm start
-
-# Start government API
-cd ../government-api && npm start
-```
-
-2. Start the client applications:
-```bash
-# Start renter client
-cd clients/renter && npm start
-
-# Start backend client
-cd ../backend && npm start
-```
-
-## Development
-
-### Adding New Proof Types
-
-To add a new type of proof:
-
-1. Create a new script in `shared/role-scripts/` following the pattern of existing scripts
-2. Update the client services to use the new script
-3. Add appropriate UI components in the client applications
-
-### Testing
-
-Each component has its own test suite. Run tests using:
-=======
 ### Generate Income Proof
->>>>>>> master
 
 ```bash
 curl -X POST http://localhost:3003/verify-income \
