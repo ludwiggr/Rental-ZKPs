@@ -1,7 +1,7 @@
 const API_BASE_URL = 'http://localhost:3000';
 const EMPLOYER_API_URL = 'http://localhost:3003';
 const BANK_API_URL = 'http://localhost:3002';
-const LANDLORD_API_URL = 'http://localhost:3001';
+const LANDLORD_API_URL = 'http://localhost:3004';
 
 class APIService {
   static async generateIncomeProof(income, employerId) {
@@ -30,7 +30,8 @@ class APIService {
 
   static async verifyProof(proof) {
     console.log('Verifying proof...');
-    const response = await fetch('/verify-proof.sh', {
+    // First send the proof to landlord API
+    const sendResponse = await fetch(`${LANDLORD_API_URL}/receive-proof`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -38,12 +39,34 @@ class APIService {
       body: JSON.stringify({ proof }),
     });
 
-    if (!response.ok) {
-      const error = await response.json();
+    if (!sendResponse.ok) {
+      const error = await sendResponse.json();
+      throw new Error(error.error || 'Failed to send proof for verification');
+    }
+
+    // Get the index of the received proof (it will be 0 since it's the first one)
+    const proofsResponse = await fetch(`${LANDLORD_API_URL}/proofs`);
+    if (!proofsResponse.ok) {
+      throw new Error('Failed to get proofs list');
+    }
+
+    const proofsData = await proofsResponse.json();
+    const proofIndex = proofsData.proofs.length - 1; // Get the index of the latest proof
+
+    // Now verify the proof using the landlord API
+    const verifyResponse = await fetch(`${LANDLORD_API_URL}/verify-proof/${proofIndex}`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+
+    if (!verifyResponse.ok) {
+      const error = await verifyResponse.json();
       throw new Error(error.error || 'Failed to verify proof');
     }
 
-    const result = await response.json();
+    const result = await verifyResponse.json();
     console.log('Verification result:', result);
     return result;
   }
@@ -68,16 +91,17 @@ class APIService {
     return result;
   }
 
-  static async requestCreditCheck(ssn) {
-    console.log('Requesting credit check for SSN:', ssn);
+  static async requestCreditCheck({ creditScore, bankId, timestamp }) {
+    console.log('Requesting credit check:', { creditScore, bankId, timestamp });
     const response = await fetch(`${BANK_API_URL}/request-credit-check`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        ssn,
-        timestamp: new Date().toISOString()
+        creditScore,
+        bankId,
+        timestamp
       }),
     });
 
