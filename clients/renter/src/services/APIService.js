@@ -91,16 +91,17 @@ class APIService {
     return result;
   }
 
-  static async requestCreditCheck(ssn) {
-    console.log('Requesting credit check for SSN:', ssn);
+  static async requestCreditCheck({ creditScore, bankId, timestamp }) {
+    console.log('Requesting credit check:', { creditScore, bankId, timestamp });
     const response = await fetch(`${BANK_API_URL}/request-credit-check`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        ssn,
-        timestamp: new Date().toISOString()
+        creditScore,
+        bankId,
+        timestamp
       }),
     });
 

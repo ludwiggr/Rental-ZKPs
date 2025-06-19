@@ -34,13 +34,13 @@ const RenterApp = () => {
     }
   };
 
-  const handleVerifyProof = async () => {
+  const handleVerifyProof = async (proof) => {
     try {
       setError(null);
       setLoading(true);
       setVerificationResult(null);
 
-      const result = await APIService.verifyProof(incomeProof);
+      const result = await APIService.verifyProof(proof);
       setVerificationResult(result.success);
       console.log('Verification result:', result);
     } catch (error) {
@@ -51,13 +51,13 @@ const RenterApp = () => {
     }
   };
 
-  const handleSendToLandlord = async () => {
+  const handleSendToLandlord = async (proof) => {
     try {
       setError(null);
       setLoading(true);
       setSendingStatus(null);
 
-      const result = await APIService.sendProofToLandlord(incomeProof);
+      const result = await APIService.sendProofToLandlord(proof);
       setSendingStatus(result.success);
       console.log('Sending result:', result);
     } catch (error) {
@@ -71,20 +71,25 @@ const RenterApp = () => {
   const handleRequestCreditCheck = async () => {
     try {
       setError(null);
+      setLoading(true);
+      setCreditScoreProof(null);
+
       const result = await APIService.requestCreditCheck({
         creditScore: parseFloat(creditScore),
         bankId,
         timestamp: new Date().toISOString()
       });
-      
+
       if (result.success) {
-        setCreditScoreProof(result.check);
+        setCreditScoreProof(result.proof);
       } else {
         setError(result.error || 'Failed to request credit check');
       }
     } catch (error) {
       console.error('Error requesting credit check:', error);
       setError('Failed to request credit check. Please try again.');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -143,7 +148,7 @@ const RenterApp = () => {
               <Button
                 variant="contained"
                 color="primary"
-                onClick={handleVerifyProof}
+                onClick={() => handleVerifyProof(incomeProof)}
                 disabled={loading}
               >
                 {loading ? <CircularProgress size={24} /> : 'Verify Proof'}
@@ -151,7 +156,7 @@ const RenterApp = () => {
               <Button
                 variant="contained"
                 color="secondary"
-                onClick={handleSendToLandlord}
+                onClick={() => handleSendToLandlord(incomeProof)}
                 disabled={loading}
               >
                 {loading ? <CircularProgress size={24} /> : 'Send to Landlord'}
@@ -185,6 +190,7 @@ const RenterApp = () => {
                 value={creditScore}
                 onChange={(e) => setCreditScore(e.target.value)}
                 margin="normal"
+                helperText="Valid range: 300-850"
               />
               <TextField
                 fullWidth
@@ -192,22 +198,43 @@ const RenterApp = () => {
                 value={bankId}
                 onChange={(e) => setBankId(e.target.value)}
                 margin="normal"
+                helperText="Valid bank ID: 12345"
               />
               <Button
                 variant="contained"
                 onClick={handleRequestCreditCheck}
                 sx={{ mt: 2 }}
                 fullWidth
-                disabled={!creditScore || !bankId}
+                disabled={loading || !creditScore || !bankId}
               >
-                Request Credit Check
+                {loading ? <CircularProgress size={24} /> : 'Request Credit Check'}
               </Button>
               {creditScoreProof && (
                 <Box sx={{ mt: 2 }}>
                   <Typography variant="subtitle1">Credit Score Proof:</Typography>
-                  <Typography variant="body2" sx={{ wordBreak: 'break-all' }}>
-                    {JSON.stringify(creditScoreProof, null, 2)}
-                  </Typography>
+                  <Box sx={{ mb: 2 }}>
+                    <pre style={{ overflow: 'auto', maxHeight: '200px' }}>
+                      {JSON.stringify(creditScoreProof, null, 2)}
+                    </pre>
+                  </Box>
+                  <Box sx={{ display: 'flex', gap: 2 }}>
+                    <Button
+                      variant="contained"
+                      color="primary"
+                      onClick={() => handleVerifyProof(creditScoreProof)}
+                      disabled={loading}
+                    >
+                      {loading ? <CircularProgress size={24} /> : 'Verify Proof'}
+                    </Button>
+                    <Button
+                      variant="contained"
+                      color="secondary"
+                      onClick={() => handleSendToLandlord(creditScoreProof)}
+                      disabled={loading}
+                    >
+                      {loading ? <CircularProgress size={24} /> : 'Send to Landlord'}
+                    </Button>
+                  </Box>
                 </Box>
               )}
             </Paper>
