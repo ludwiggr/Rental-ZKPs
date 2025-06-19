@@ -1,18 +1,19 @@
 # Heimdall
 
-Heimdall is a SSI framework based on generic ZKPs.
+This repository contains the implementation of the Heimdall Zero-Knowledge Proof (ZKP) system.
 
-# heimdalljs
+## heimdalljs
 
-## Install
-- Install nodejs(@v16.0.0) and npm (@7.10.0)
-- Go to heimdalljs
-- Install dependencies `npm install`
-- Link the package to the path `sudo npm link`
-- Heimdall is now available by the command `heimdalljs`
+The JavaScript implementation of Heimdall is located in the `heimdalljs` directory. To use it:
 
-## Usage
-The files example-run.sh provide an example run for heimdalljs using the individual presentation types. Run and inspect the scripts. They are located in heimdalljs/test/*
+- Navigate to the `heimdalljs` directory
+- Run `npm install` to install dependencies
+- The CLI scripts are available in `heimdalljs/cli`
 
-## Circom
-The circuits of the presentations are located in the folder circom. These are not required for the usage of heimdalljs since their resulting ZKeys are stored in heimdalljs/zkp. 
+## Example Usage
+
+The files `example-run.sh` provide examples for using the Heimdall CLI with different presentation types. These scripts are located in `heimdalljs/test/*`. Review and run these scripts to understand the workflow.
+
+## Circuit Implementation
+
+The circuits of the presentations are located in the `circom` folder. These are not required for usage since their resulting ZKeys are stored in `heimdalljs/zkp`. 

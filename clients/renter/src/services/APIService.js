@@ -114,6 +114,46 @@ class APIService {
     console.log('Credit check response:', result);
     return result;
   }
+
+  static async getListings() {
+    const response = await fetch(`${LANDLORD_API_URL}/listings`);
+    if (!response.ok) {
+      throw new Error('Failed to fetch listings');
+    }
+    return response.json();
+  }
+
+  static async submitApplication(listingId, { incomeProof, creditScoreProof }) {
+    console.log('Submitting application for listing:', listingId);
+    const response = await fetch(`${LANDLORD_API_URL}/listings/${listingId}/apply`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        incomeProof,
+        creditScoreProof,
+        timestamp: new Date().toISOString()
+      }),
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.error || 'Failed to submit application');
+    }
+
+    const result = await response.json();
+    console.log('Application submission result:', result);
+    return result;
+  }
+
+  static async getApplicationStatus(listingId, applicationId) {
+    const response = await fetch(`${LANDLORD_API_URL}/listings/${listingId}/applications/${applicationId}`);
+    if (!response.ok) {
+      throw new Error('Failed to fetch application status');
+    }
+    return response.json();
+  }
 }
 
 export default APIService; 

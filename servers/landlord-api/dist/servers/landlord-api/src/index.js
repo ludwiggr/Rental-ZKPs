@@ -9,34 +9,67 @@ const child_process_1 = require("child_process");
 const util_1 = require("util");
 const path_1 = __importDefault(require("path"));
 const promises_1 = __importDefault(require("fs/promises"));
+
 const execAsync = (0, util_1.promisify)(child_process_1.exec);
 const app = (0, express_1.default)();
 const port = process.env.PORT || 3004;
-// Configure CORS - more permissive during development
+
+// Configure middleware
 app.use((0, cors_1.default)());
 app.use(express_1.default.json());
+
 // Store received proofs and listings
 const receivedProofs = [];
-const listings = [
-    {
-        id: '1',
-        name: 'Modern City Apartment',
-        address: '123 Urban Street, City Center',
-        size: 75,
-        price: 1200,
-        type: 'apartment',
-        applications: []
-    },
-    {
-        id: '2',
-        name: 'Cozy Suburban House',
-        address: '456 Quiet Lane, Suburbs',
-        size: 120,
-        price: 1800,
-        type: 'house',
-        applications: []
+let listings = [];
+const DATA_FILE = path_1.default.join(process.cwd(), 'data', 'listings.json');
+
+// Load data from file
+async function loadData() {
+    try {
+        const data = await promises_1.default.readFile(DATA_FILE, 'utf-8');
+        listings = JSON.parse(data);
+        console.log('Loaded listings data:', listings);
     }
-];
+    catch (error) {
+        console.log('No existing data found, starting with empty listings');
+        listings = [
+            {
+                id: '1',
+                name: 'Modern City Apartment',
+                address: '123 Urban Street, City Center',
+                size: 75,
+                price: 1200,
+                type: 'apartment',
+                applications: []
+            },
+            {
+                id: '2',
+                name: 'Cozy Suburban House',
+                address: '456 Quiet Lane, Suburbs',
+                size: 120,
+                price: 1800,
+                type: 'house',
+                applications: []
+            }
+        ];
+        await saveData();
+    }
+}
+
+// Save data to file
+async function saveData() {
+    try {
+        await promises_1.default.writeFile(DATA_FILE, JSON.stringify(listings, null, 2));
+        console.log('Saved listings data');
+    }
+    catch (error) {
+        console.error('Error saving data:', error);
+    }
+}
+
+// Initialize data
+loadData();
+
 // Get all listings
 app.get('/listings', (req, res) => {
     res.json({
@@ -44,6 +77,7 @@ app.get('/listings', (req, res) => {
         listings
     });
 });
+
 // Get a specific listing
 app.get('/listings/:id', (req, res) => {
     const listing = listings.find(l => l.id === req.params.id);
@@ -58,6 +92,7 @@ app.get('/listings/:id', (req, res) => {
         listing
     });
 });
+
 // Get applications for a specific listing
 app.get('/listings/:id/applications', (req, res) => {
     const listing = listings.find(l => l.id === req.params.id);
@@ -72,6 +107,7 @@ app.get('/listings/:id/applications', (req, res) => {
         applications: listing.applications
     });
 });
+
 // Submit application for a listing
 app.post('/listings/:id/apply', async (req, res) => {
     try {
@@ -98,6 +134,7 @@ app.post('/listings/:id/apply', async (req, res) => {
             verificationResult: undefined
         };
         listing.applications.push(application);
+        await saveData();
         res.status(201).json({
             success: true,
             application
@@ -111,6 +148,7 @@ app.post('/listings/:id/apply', async (req, res) => {
         });
     }
 });
+
 // Verify application proofs
 app.post('/listings/:listingId/applications/:applicationId/verify', async (req, res) => {
     try {
@@ -134,7 +172,6 @@ app.post('/listings/:listingId/applications/:applicationId/verify', async (req, 
         // Get paths to issuer public keys
         const employerIssuerPkPath = path_1.default.join(process.cwd(), '..', 'employer-api', 'temp', 'employer_issuer_pk.json');
         const bankIssuerPkPath = path_1.default.join(process.cwd(), '..', 'bank-api', 'temp', 'bank_issuer_pk.json');
-        const heimdallPath = path_1.default.join(process.cwd(), '..', '..', 'heimdall', 'heimdalljs', 'cli');
         // Check if issuer public keys exist
         try {
             await promises_1.default.access(employerIssuerPkPath);
@@ -166,7 +203,7 @@ app.post('/listings/:listingId/applications/:applicationId/verify', async (req, 
         try {
             const incomeProofPath = path_1.default.join(workDir, 'income_proof.json');
             await promises_1.default.writeFile(incomeProofPath, JSON.stringify(application.incomeProof));
-            incomeResult = await execAsync(`node ${path_1.default.join(heimdallPath, 'heimdalljs-verify.js')} ${incomeProofPath}`, {
+            incomeResult = await execAsync(`heimdalljs pres attribute verify --presentation ${incomeProofPath} --issuerPK employer_issuer_pk.json`, {
                 cwd: workDir
             });
             console.log('Income proof verification result:', incomeResult.stdout);
@@ -183,7 +220,7 @@ app.post('/listings/:listingId/applications/:applicationId/verify', async (req, 
         try {
             const creditProofPath = path_1.default.join(workDir, 'credit_proof.json');
             await promises_1.default.writeFile(creditProofPath, JSON.stringify(application.creditScoreProof));
-            creditResult = await execAsync(`node ${path_1.default.join(heimdallPath, 'heimdalljs-verify.js')} ${creditProofPath}`, {
+            creditResult = await execAsync(`heimdalljs pres attribute verify --presentation ${creditProofPath} --issuerPK bank_issuer_pk.json`, {
                 cwd: workDir
             });
             console.log('Credit score proof verification result:', creditResult.stdout);
@@ -195,15 +232,16 @@ app.post('/listings/:listingId/applications/:applicationId/verify', async (req, 
                 error: 'Failed to verify credit score proof'
             });
         }
-        const verificationResult = incomeResult.stdout.includes('true') &&
-            creditResult.stdout.includes('true');
+        const verificationResult = incomeResult.stdout.includes('Verification successful') &&
+            creditResult.stdout.includes('Verification successful');
         application.verificationResult = verificationResult;
+        await saveData(); // Save the verification result
         res.json({
             success: true,
             verified: verificationResult,
             details: {
-                incomeVerification: incomeResult.stdout.includes('true'),
-                creditVerification: creditResult.stdout.includes('true')
+                incomeVerification: incomeResult.stdout.includes('Verification successful'),
+                creditVerification: creditResult.stdout.includes('Verification successful')
             }
         });
     }
@@ -215,6 +253,7 @@ app.post('/listings/:listingId/applications/:applicationId/verify', async (req, 
         });
     }
 });
+
 // Update application status
 app.patch('/listings/:listingId/applications/:applicationId', (req, res) => {
     const listing = listings.find(l => l.id === req.params.listingId);
@@ -239,11 +278,13 @@ app.patch('/listings/:listingId/applications/:applicationId', (req, res) => {
         });
     }
     application.status = status;
+    saveData();
     res.json({
         success: true,
         application
     });
 });
+
 // Delete a listing
 app.delete('/listings/:id', (req, res) => {
     const listingIndex = listings.findIndex(l => l.id === req.params.id);
@@ -254,11 +295,13 @@ app.delete('/listings/:id', (req, res) => {
         });
     }
     listings.splice(listingIndex, 1);
+    saveData();
     res.json({
         success: true,
         message: 'Listing deleted successfully'
     });
 });
+
 // Receive proof from renter
 app.post('/receive-proof', async (req, res) => {
     try {
@@ -289,6 +332,7 @@ app.post('/receive-proof', async (req, res) => {
         });
     }
 });
+
 // Get all received proofs
 app.get('/proofs', (req, res) => {
     res.json({
@@ -296,6 +340,7 @@ app.get('/proofs', (req, res) => {
         proofs: receivedProofs
     });
 });
+
 // Verify a specific proof
 app.post('/verify-proof/:index', async (req, res) => {
     try {
@@ -306,16 +351,16 @@ app.post('/verify-proof/:index', async (req, res) => {
                 error: 'Invalid proof index'
             });
         }
-        const workDir = path_1.default.join(process.cwd(), 'temp');
-        await promises_1.default.mkdir(workDir, { recursive: true });
-        const heimdallPath = path_1.default.join(process.cwd(), '..', '..', 'heimdall', 'heimdalljs', 'cli');
         const proof = receivedProofs[index].proof;
         console.log('Verifying proof:', proof);
+        // Create working directory for verification
+        const workDir = path_1.default.join(process.cwd(), 'temp');
+        await promises_1.default.mkdir(workDir, { recursive: true });
         // Save proof to file
         const proofPath = path_1.default.join(workDir, 'proof_to_verify.json');
         await promises_1.default.writeFile(proofPath, JSON.stringify(proof));
         // Verify the proof
-        const result = await execAsync(`node ${path_1.default.join(heimdallPath, 'heimdalljs-verify.js')} ${proofPath}`, {
+        const result = await execAsync('heimdalljs pres verify proof_to_verify.json', {
             cwd: workDir
         });
         const verificationResult = result.stdout.includes('Verification successful');
@@ -333,6 +378,19 @@ app.post('/verify-proof/:index', async (req, res) => {
         });
     }
 });
+
+// Health check endpoint
+app.get('/health', (req, res) => {
+    res.json({ status: 'ok' });
+});
+
+// Get current port
+app.get('/port', (req, res) => {
+    // The port will be set in the app.listen callback
+    res.json({ port: app.get('port') });
+});
+
+// Start the server
 app.listen(port, () => {
     console.log(`Landlord API server running at http://localhost:${port}`);
 });

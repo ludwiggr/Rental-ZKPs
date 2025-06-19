@@ -9,7 +9,7 @@ import { fileURLToPath } from 'url';
 const execAsync = promisify(exec);
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-const HEIMDALLJS_PATH = path.join(__dirname, '..', '..', '..', 'heimdall', 'heimdalljs', 'heimdall', 'cli');
+const HEIMDALLJS_PATH = path.join(__dirname, '..', '..', '..', 'heimdall', 'heimdalljs', 'cli');
 const TEMP_DIR = path.join(process.cwd(), 'temp');
 dotenv.config();
 const app = express();

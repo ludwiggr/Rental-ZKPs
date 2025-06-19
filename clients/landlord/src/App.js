@@ -1,5 +1,5 @@
 import React from 'react';
-import {Routes, Route} from 'react-router-dom';
+import { Routes, Route, Navigate } from 'react-router-dom';
 
 // Import page components
 import ListingsOverview from './pages/ListingsOverview';
@@ -10,25 +10,18 @@ import DummyLandingPage from './pages/DummyLandingPage';
 // Layouts
 import MainLayout from './layouts/MainLayout';
 
-
 function App() {
     return (
         <Routes>
-            {/* Public Routes with optional layout */}
-            <Route element={<MainLayout/>}>
-                <Route path="/landing" element={<DummyLandingPage/>}/>
+            <Route element={<MainLayout />}>
+                {/* Redirect from root to listings overview */}
+                <Route path="/" element={<Navigate to="/listings-overview" replace />} />
+                <Route path="/landing" element={<DummyLandingPage />} />
+                <Route path="/listings-overview" element={<ListingsOverview />} />
+                <Route path="/create-listing" element={<CreateListing />} />
+                <Route path="/listing/:id" element={<ListingDetails />} />
             </Route>
-            {/* Public Routes with optional layout */}
-            <Route element={<MainLayout/>}>
-                <Route path="/listings-overview" element={<ListingsOverview/>}/>
-            </Route>
-            {/* Public Routes with optional layout */}
-            <Route element={<MainLayout/>}>
-                <Route path="/create-listing" element={<CreateListing/>}/>
-            </Route>
-            <Route path="/listing/:id" element={<ListingDetails />} />
         </Routes>
-
     );
 }
 

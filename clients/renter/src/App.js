@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { Box, Button, TextField, Typography, Container, Paper, Grid, Alert, CircularProgress } from '@mui/material';
+import React, { useState, useEffect } from 'react';
+import { Box, Button, TextField, Typography, Container, Paper, Grid, Alert, CircularProgress, Dialog, DialogTitle, DialogContent, DialogActions } from '@mui/material';
 import { generateIncomeProof, requestCreditCheck } from './services/APIService';
 import APIService from './services/APIService';
 
@@ -14,6 +14,28 @@ const RenterApp = () => {
   const [verificationResult, setVerificationResult] = useState(null);
   const [loading, setLoading] = useState(false);
   const [sendingStatus, setSendingStatus] = useState(null);
+  const [listings, setListings] = useState([]);
+  const [listingsError, setListingsError] = useState(null);
+  const [listingsLoading, setListingsLoading] = useState(true);
+  const [selectedListing, setSelectedListing] = useState(null);
+  const [applicationStatus, setApplicationStatus] = useState({});
+  const [isApplicationDialogOpen, setIsApplicationDialogOpen] = useState(false);
+
+  useEffect(() => {
+    const fetchListings = async () => {
+      try {
+        const data = await APIService.getListings();
+        setListings(data.listings || []);
+        setListingsError(null);
+      } catch (err) {
+        console.error('Failed to fetch listings:', err);
+        setListingsError('Failed to load listings. Please try again later.');
+      } finally {
+        setListingsLoading(false);
+      }
+    };
+    fetchListings();
+  }, []);
 
   const handleGenerateIncomeProof = async () => {
     try {
@@ -93,9 +115,119 @@ const RenterApp = () => {
     }
   };
 
+  const handleApplyToListing = (listing) => {
+    setSelectedListing(listing);
+    setIsApplicationDialogOpen(true);
+  };
+
+  const handleSubmitApplication = async () => {
+    if (!incomeProof || !creditScoreProof) {
+      setError('Please generate both income and credit score proofs before applying');
+      return;
+    }
+
+    try {
+      setLoading(true);
+      setError(null);
+
+      const result = await APIService.submitApplication(selectedListing._id || selectedListing.id, {
+        incomeProof,
+        creditScoreProof
+      });
+
+      setApplicationStatus(prev => ({
+        ...prev,
+        [selectedListing._id || selectedListing.id]: 'pending'
+      }));
+
+      setIsApplicationDialogOpen(false);
+      setSendingStatus('Application submitted successfully!');
+    } catch (err) {
+      console.error('Failed to submit application:', err);
+      setError(err.message || 'Failed to submit application');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <Container maxWidth="md">
       <Box sx={{ my: 4 }}>
+        <Typography variant="h4" component="h1" gutterBottom>
+          Available Listings
+        </Typography>
+
+        {listingsError && (
+          <Alert severity="error" sx={{ mb: 2 }}>
+            {listingsError}
+          </Alert>
+        )}
+
+        {listingsLoading ? (
+          <Box sx={{ display: 'flex', justifyContent: 'center', my: 2 }}>
+            <CircularProgress />
+          </Box>
+        ) : (
+          <Grid container spacing={3} sx={{ mb: 4 }}>
+            {listings.length === 0 ? (
+              <Grid item xs={12}>
+                <Alert severity="info">No listings available at the moment.</Alert>
+              </Grid>
+            ) : (
+              listings.map((listing) => (
+                <Grid item xs={12} sm={6} md={4} key={listing._id || listing.id}>
+                  <Paper
+                    sx={{
+                      p: 2,
+                      height: '100%',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      position: 'relative',
+                    }}
+                  >
+                    <Typography variant="h6" component="h2" gutterBottom>
+                      {listing.name || 'Unnamed Listing'}
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary" paragraph>
+                      <strong>Address:</strong> {listing.address || 'No address provided'}
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary" paragraph>
+                      <strong>Size:</strong> {listing.size || 'N/A'} m²
+                    </Typography>
+                    {listing.price && (
+                      <Typography variant="body2" color="text.secondary" paragraph>
+                        <strong>Price:</strong> €{listing.price}
+                      </Typography>
+                    )}
+                    {listing.type && (
+                      <Typography variant="body2" color="text.secondary" paragraph>
+                        <strong>Type:</strong> {listing.type}
+                      </Typography>
+                    )}
+                    <Box sx={{ mt: 'auto', pt: 2 }}>
+                      {applicationStatus[listing._id || listing.id] ? (
+                        <Alert severity="info">
+                          Application status: {applicationStatus[listing._id || listing.id]}
+                        </Alert>
+                      ) : (
+                        <Button
+                          variant="contained"
+                          color="primary"
+                          fullWidth
+                          onClick={() => handleApplyToListing(listing)}
+                          disabled={loading}
+                        >
+                          Apply Now
+                        </Button>
+                      )}
+                    </Box>
+                  </Paper>
+                </Grid>
+              ))
+            )}
+          </Grid>
+        )}
+
         <Typography variant="h4" component="h1" gutterBottom>
           Income Verification
         </Typography>
@@ -240,6 +372,32 @@ const RenterApp = () => {
             </Paper>
           </Grid>
         </Grid>
+
+        <Dialog open={isApplicationDialogOpen} onClose={() => setIsApplicationDialogOpen(false)}>
+          <DialogTitle>Apply to Listing</DialogTitle>
+          <DialogContent>
+            <Typography variant="body1" paragraph>
+              To apply for this listing, you need to:
+            </Typography>
+            <Typography component="div">
+              1. Generate Income Proof {incomeProof ? '✅' : '❌'}
+            </Typography>
+            <Typography component="div">
+              2. Generate Credit Score Proof {creditScoreProof ? '✅' : '❌'}
+            </Typography>
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={() => setIsApplicationDialogOpen(false)}>Cancel</Button>
+            <Button
+              onClick={handleSubmitApplication}
+              disabled={!incomeProof || !creditScoreProof || loading}
+              variant="contained"
+              color="primary"
+            >
+              {loading ? <CircularProgress size={24} /> : 'Submit Application'}
+            </Button>
+          </DialogActions>
+        </Dialog>
       </Box>
     </Container>
   );

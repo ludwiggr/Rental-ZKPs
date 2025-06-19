@@ -1,127 +1,185 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { api } from '../services/api';
+import {
+    Box,
+    Button,
+    Card,
+    CardContent,
+    CardActions,
+    Typography,
+    Grid,
+    CircularProgress,
+    Alert,
+    Container,
+    Chip,
+    Stack,
+    IconButton,
+    Tooltip
+} from '@mui/material';
+import AddIcon from '@mui/icons-material/Add';
+import VisibilityIcon from '@mui/icons-material/Visibility';
+import PersonIcon from '@mui/icons-material/Person';
 
-function Listings() {
+function ListingsOverview() {
     const [listings, setListings] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
     const navigate = useNavigate();
 
     useEffect(() => {
         const fetchListings = async () => {
-            const token = localStorage.getItem('token');
-
             try {
-                const res = await fetch('/api/listings?mine=true', {
-                    headers: {
-                        Authorization: `Bearer ${token}`,
-                    },
-                });
-
-                if (!res.ok) {
-                    throw new Error('Failed to fetch listings');
-                }
-
-                const data = await res.json();
-                setListings(data.listings);
+                const data = await api.getListings();
+                setListings(data.listings || []);
+                setError(null);
             } catch (err) {
-                console.error(err);
+                console.error('Failed to fetch listings:', err);
+                setError('Failed to load listings. Please try again later.');
             } finally {
                 setLoading(false);
             }
         };
         fetchListings();
-    }, [navigate]);
+    }, []);
 
-    if (loading) return <div style={styles.loading}>Loading...</div>;
+    const getApplicationStats = (applications = []) => {
+        const stats = {
+            total: applications.length,
+            pending: 0,
+            approved: 0,
+            rejected: 0
+        };
+
+        applications.forEach(app => {
+            if (app.status === 'approved') stats.approved++;
+            else if (app.status === 'rejected') stats.rejected++;
+            else stats.pending++;
+        });
+
+        return stats;
+    };
+
+    if (loading) {
+        return (
+            <Box display="flex" justifyContent="center" alignItems="center" minHeight="400px">
+                <CircularProgress />
+            </Box>
+        );
+    }
+
+    if (error) {
+        return (
+            <Container maxWidth="lg" sx={{ mt: 4 }}>
+                <Alert severity="error">{error}</Alert>
+            </Container>
+        );
+    }
 
     return (
-        <div style={styles.page}>
-            <div style={styles.header}>
-                <h2>Your Listings</h2>
-                <button
+        <Container maxWidth="lg" sx={{ py: 4 }}>
+            <Box display="flex" justifyContent="space-between" alignItems="center" mb={4}>
+                <Typography variant="h4" component="h1">
+                    Your Listings
+                </Typography>
+                <Button
+                    variant="contained"
+                    startIcon={<AddIcon />}
                     onClick={() => navigate('/create-listing')}
-                    style={{
-                        padding: '0.5rem 1rem',
-                        fontSize: '1rem',
-                        borderRadius: '6px',
-                        backgroundColor: '#007bff',
-                        color: '#fff',
-                        border: 'none',
-                        cursor: 'pointer',
-                    }}
                 >
                     New Listing
-                </button>
-            </div>
+                </Button>
+            </Box>
 
-            <div style={styles.grid}>
-                {listings.map((listing, index) => (
-                    <div key={index} style={{ ...styles.card, position: 'relative' }}>
-                        <button
-                            onClick={() => navigate(`/listing/${listing._id}`)}
-                            style={{
-                                position: 'absolute',
-                                top: '10px',
-                                right: '10px',
-                                backgroundColor: '#eee',
-                                border: 'none',
-                                borderRadius: '50%',
-                                width: '30px',
-                                height: '30px',
-                                cursor: 'pointer',
-                                fontWeight: 'bold',
-                            }}
-                            title="View details"
-                        >
-                            i
-                        </button>
-                        <h3>{listing.name}</h3>
-                        <p><strong>Address:</strong> {listing.address}</p>
-                        <p><strong>Size:</strong> {listing.size} m²</p>
-                        <p><strong>Number of applicants:</strong> {listing.applicants?.length || 0}</p>
-                    </div>
-                ))}
-            </div>
-        </div>
+            <Grid container spacing={3}>
+                {listings.length === 0 ? (
+                    <Grid item xs={12}>
+                        <Alert severity="info">
+                            No listings found. Create your first listing!
+                        </Alert>
+                    </Grid>
+                ) : (
+                    listings.map((listing) => {
+                        const stats = getApplicationStats(listing.applications);
+                        return (
+                            <Grid item xs={12} sm={6} md={4} key={listing.id}>
+                                <Card>
+                                    <CardContent>
+                                        <Box display="flex" justifyContent="space-between" alignItems="flex-start">
+                                            <Typography variant="h6" gutterBottom>
+                                                {listing.name || 'Unnamed Listing'}
+                                            </Typography>
+                                            <Tooltip title="View Details">
+                                                <IconButton
+                                                    size="small"
+                                                    onClick={() => navigate(`/listing/${listing.id}`)}
+                                                >
+                                                    <VisibilityIcon />
+                                                </IconButton>
+                                            </Tooltip>
+                                        </Box>
+                                        <Typography color="textSecondary" gutterBottom>
+                                            {listing.address || 'No address provided'}
+                                        </Typography>
+                                        <Typography variant="body2" paragraph>
+                                            <strong>Size:</strong> {listing.size || 'N/A'} m²
+                                        </Typography>
+                                        {listing.price && (
+                                            <Typography variant="body2" paragraph>
+                                                <strong>Price:</strong> €{listing.price}
+                                            </Typography>
+                                        )}
+                                        <Box mt={2}>
+                                            <Typography variant="subtitle2" gutterBottom>
+                                                Applications
+                                            </Typography>
+                                            <Stack direction="row" spacing={1}>
+                                                <Chip
+                                                    icon={<PersonIcon />}
+                                                    label={`${stats.total} Total`}
+                                                    size="small"
+                                                />
+                                                {stats.pending > 0 && (
+                                                    <Chip
+                                                        label={`${stats.pending} Pending`}
+                                                        size="small"
+                                                        color="primary"
+                                                    />
+                                                )}
+                                                {stats.approved > 0 && (
+                                                    <Chip
+                                                        label={`${stats.approved} Approved`}
+                                                        size="small"
+                                                        color="success"
+                                                    />
+                                                )}
+                                                {stats.rejected > 0 && (
+                                                    <Chip
+                                                        label={`${stats.rejected} Rejected`}
+                                                        size="small"
+                                                        color="error"
+                                                    />
+                                                )}
+                                            </Stack>
+                                        </Box>
+                                    </CardContent>
+                                    <CardActions>
+                                        <Button
+                                            size="small"
+                                            onClick={() => navigate(`/listing/${listing.id}`)}
+                                            startIcon={<VisibilityIcon />}
+                                        >
+                                            View Details
+                                        </Button>
+                                    </CardActions>
+                                </Card>
+                            </Grid>
+                        );
+                    })
+                )}
+            </Grid>
+        </Container>
     );
 }
 
-const styles = {
-    page: {
-        padding: '2rem',
-        fontFamily: 'Arial, sans-serif',
-    },
-    header: {
-        display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        marginBottom: '1rem',
-    },
-    addButton: {
-        fontSize: '1.5rem',
-        background: '#007bff',
-        color: 'white',
-        border: 'none',
-        borderRadius: '50%',
-        width: '40px',
-        height: '40px',
-        cursor: 'pointer',
-    },
-    grid: {
-        display: 'grid',
-        gap: '1rem',
-        gridTemplateColumns: 'repeat(auto-fill, minmax(250px, 1fr))',
-    },
-    card: {
-        border: '1px solid #ccc',
-        borderRadius: '10px',
-        padding: '1rem',
-        background: '#f9f9f9',
-    },
-    loading: {
-        textAlign: 'center',
-        padding: '2rem',
-    },
-};
-
-export default Listings;
+export default ListingsOverview;
