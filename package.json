@@ -1,0 +1,19 @@
+{
+  "name": "rental-zkps",
+  "private": true,
+  "version": "1.0.0",
+  "workspaces": [
+    "clients/landlord",
+    "clients/login",
+    "clients/renter",
+    "heimdall/heimdalljs/heimdall",
+    "servers/backend",
+    "servers/bank-api",
+    "servers/employer-api",
+    "servers/landlord-api",
+    "shared"
+  ],
+  "scripts": {
+    "install:all": "npm install"
+  }
+}
