@@ -11,6 +11,8 @@ const RenterApp = () => {
   const [incomeProof, setIncomeProof] = useState(null);
   const [creditScoreProof, setCreditScoreProof] = useState(null);
   const [error, setError] = useState(null);
+  const [incomeError, setIncomeError] = useState(null);
+  const [creditError, setCreditError] = useState(null);
   const [incomeVerificationResult, setIncomeVerificationResult] = useState(null);
   const [creditVerificationResult, setCreditVerificationResult] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -41,7 +43,7 @@ const RenterApp = () => {
 
   const handleGenerateIncomeProof = async () => {
     try {
-      setError(null);
+      setIncomeError(null);
       setLoading(true);
       setIncomeProof(null);
       setIncomeVerificationResult(null);
@@ -51,7 +53,7 @@ const RenterApp = () => {
       console.log('Generated proof:', result.proof);
     } catch (error) {
       console.error('Error generating income proof:', error);
-      setError(error.message || 'Failed to generate income proof');
+      setIncomeError(error.message || 'Failed to generate income proof');
     } finally {
       setLoading(false);
     }
@@ -59,14 +61,14 @@ const RenterApp = () => {
 
   const handleVerifyProof = async (proof, proofType = 'income') => {
     try {
-      setError(null);
-      setLoading(true);
-
       if (proofType === 'income') {
+        setIncomeError(null);
         setIncomeVerificationResult(null);
       } else {
+        setCreditError(null);
         setCreditVerificationResult(null);
       }
+      setLoading(true);
 
       const result = await APIService.verifyProof(proof);
 
@@ -79,7 +81,12 @@ const RenterApp = () => {
       console.log('Verification result:', result);
     } catch (error) {
       console.error('Error verifying proof:', error);
-      setError(error.message || 'Failed to verify proof');
+      const errorMessage = error.message || 'Failed to verify proof';
+      if (proofType === 'income') {
+        setIncomeError(errorMessage);
+      } else {
+        setCreditError(errorMessage);
+      }
     } finally {
       setLoading(false);
     }
@@ -87,7 +94,7 @@ const RenterApp = () => {
 
   const handleRequestCreditCheck = async () => {
     try {
-      setError(null);
+      setCreditError(null);
       setLoading(true);
       setCreditScoreProof(null);
       setCreditVerificationResult(null);
@@ -101,11 +108,11 @@ const RenterApp = () => {
       if (result.success) {
         setCreditScoreProof(result.proof);
       } else {
-        setError(result.error || 'Failed to request credit check');
+        setCreditError(result.error || 'Failed to request credit check');
       }
     } catch (error) {
       console.error('Error requesting credit check:', error);
-      setError('Failed to request credit check. Please try again.');
+      setCreditError(error.message || 'Failed to request credit check. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -113,6 +120,7 @@ const RenterApp = () => {
 
   const handleApplyToListing = (listing) => {
     setSelectedListing(listing);
+    setError(null);
     setIsApplicationDialogOpen(true);
   };
 
@@ -343,6 +351,12 @@ const RenterApp = () => {
           </Grid>
         )}
 
+        {error && (
+          <Alert severity="error" sx={{ mb: 2 }}>
+            {error}
+          </Alert>
+        )}
+
         {/* Income Verification Section */}
         <Box display="flex" justifyContent="space-between" alignItems="center" mb={1}>
           <Typography variant="h4" component="h1">
@@ -378,9 +392,9 @@ const RenterApp = () => {
           </Button>
         </Paper>
 
-        {error && (
+        {incomeError && (
           <Alert severity="error" sx={{ mb: 2 }}>
-            {error}
+            {incomeError}
           </Alert>
         )}
 
@@ -445,6 +459,11 @@ const RenterApp = () => {
               >
                 {loading ? <CircularProgress size={24} /> : 'Request Credit Check'}
               </Button>
+              {creditError && (
+                <Alert severity="error" sx={{ mt: 2 }}>
+                  {creditError}
+                </Alert>
+              )}
               {creditScoreProof && (
                 <Box sx={{ mt: 2 }}>
                   <Typography variant="subtitle1">Credit Score Proof:</Typography>
