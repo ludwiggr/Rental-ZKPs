@@ -1,4 +1,4 @@
-import {Outlet} from "react-router-dom";
+import { Outlet } from "react-router-dom";
 
 function NavBar() {
     const handleLogout = () => {
@@ -19,7 +19,7 @@ function NavBar() {
             justifyContent: 'space-between',
             alignItems: 'center',
         }}>
-            <h1>Landlord Interface</h1>
+            <h1>Landlord</h1>
             <button
                 onClick={handleLogout}
                 style={{

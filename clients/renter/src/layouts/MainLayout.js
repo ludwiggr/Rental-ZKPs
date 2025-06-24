@@ -1,4 +1,4 @@
-import {Outlet} from "react-router-dom";
+import { Outlet } from "react-router-dom";
 
 function NavBar() {
     const handleLogout = () => {
@@ -19,7 +19,7 @@ function NavBar() {
             justifyContent: 'space-between',
             alignItems: 'center',
         }}>
-            <h1>Tenant Interface</h1>
+            <h1>Tenant / Renter / Applicant</h1>
             <button
                 onClick={handleLogout}
                 style={{
@@ -41,14 +41,14 @@ function NavBar() {
     );
 }
 
-function MainLayout() {
+function MainLayout({ children }) {
     return (
         <div style={styles.main}>
             <NavBar />
             <main style={{
                 backgroundColor: '#f0f0f0', // Light gray background
             }}>
-                <Outlet />
+                {children}
             </main>
         </div>
     );

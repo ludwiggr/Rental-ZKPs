@@ -91,6 +91,12 @@ npm run install:all
 - **Attribute-Based Credentials**: Based on Heimdall's credential system
 - **Secure Verification**: Cryptographic proofs ensure authenticity
 
+### Selective Proof Verification
+- **Dynamic Requirements**: Each listing can specify which proofs are required (income, credit score, or both)
+- **Minimum Value Validation**: Proofs are validated against listing-specific minimum requirements
+- **Smart UI**: Only shows relevant proof options based on listing requirements
+- **Efficient Processing**: Only verifies proofs that are actually required for each listing
+
 ### Multi-Party System
 - **Renter**: Submit income verification requests
 - **Employer**: Issue income credentials
@@ -150,7 +156,72 @@ Financial verification endpoints for credit checks and account validation.
 ### Landlord API (Port 3004)
 Rental application processing and verification endpoints.
 
+#### POST /listings/:id/apply
+Submit a rental application with selective proof validation.
+
+**Request:**
+```json
+{
+  "incomeProof": {
+    "type": "attribute",
+    "proof": { ... },
+    "publicSignals": ["2500"]
+  },
+  "creditScoreProof": {
+    "type": "attribute", 
+    "proof": { ... },
+    "publicSignals": ["750"]
+  }
+}
+```
+
+**Validation Logic:**
+- Only validates proofs that are required by the listing
+- Checks minimum value requirements (e.g., income ≥ €2000)
+- Returns detailed error messages for missing or insufficient proofs
+
+#### POST /listings/:listingId/applications/:applicationId/verify
+Verify application proofs based on listing requirements.
+
+**Response:**
+```json
+{
+  "success": true,
+  "verified": true,
+  "details": {
+    "incomeVerification": true,
+    "creditVerification": true
+  }
+}
+```
+
+**Selective Verification:**
+- Only verifies proofs that are required by the listing
+- Skips verification of non-required proofs
+- Provides detailed breakdown of verification results
+
 ## 🏗️ Technical Architecture
+
+### Enhanced Application Workflow
+
+#### Renter Application Process
+1. **Browse Listings**: View available properties with their specific proof requirements
+2. **Generate Required Proofs**: Only generate proofs that are actually needed for the desired listing
+3. **Smart Validation**: System validates that generated proofs meet the listing's minimum requirements
+4. **Selective Submission**: Submit application with only the required proofs
+
+#### Landlord Verification Process
+1. **Requirement-Based Review**: Only review proofs that are relevant to the listing
+2. **Minimum Value Validation**: Verify that submitted proofs meet the specified minimum requirements
+3. **Efficient Processing**: Backend only verifies the proofs that are actually required
+4. **Clear Feedback**: Detailed status indicators show which proofs are valid, missing, or insufficient
+
+#### Proof Requirements Configuration
+Each listing can specify:
+- **Income Proof**: Required minimum income (e.g., €2000/month)
+- **Credit Score Proof**: Required minimum credit score (e.g., 700)
+- **Both Proofs**: When both income and credit verification are needed
+- **No Specific Requirements**: Fallback to requiring both proofs
 
 ### Zero-Knowledge Proof System
 
@@ -199,6 +270,22 @@ All generated files are stored in `servers/employer-api/temp/`:
 
 ## 🧪 Testing
 
+### Sample Listings
+
+The system includes three sample listings with different proof requirements:
+
+#### 1. Modern City Apartment (ID: 1)
+- **Requirements**: Income ≥ €3000 AND Credit Score ≥ 650
+- **Use Case**: High-end apartment requiring both income and credit verification
+
+#### 2. Cozy Suburban House (ID: 2)  
+- **Requirements**: Income ≥ €4500 AND Credit Score ≥ 700
+- **Use Case**: Premium house with strict financial requirements
+
+#### 3. Income-Only Studio (ID: 3)
+- **Requirements**: Income ≥ €2000 ONLY
+- **Use Case**: Budget-friendly option requiring only income verification
+
 ### Manual Testing
 
 1. **Start all services:**
@@ -213,7 +300,18 @@ All generated files are stored in `servers/employer-api/temp/`:
      -d '{"income": "2500", "employerId": "42"}'
    ```
 
-3. **Access applications:**
+3. **Test selective application submission:**
+   - Access Renter Client: http://localhost:3000
+   - Generate income proof with €2500
+   - Try applying to "Income-Only Studio" (should succeed with only income proof)
+   - Try applying to "Modern City Apartment" (should require both proofs)
+
+4. **Test landlord verification:**
+   - Access Landlord Client: http://localhost:3001
+   - View listing details to see proof requirements
+   - Review applications and verify only required proofs are processed
+
+5. **Access applications:**
    - Renter Client: http://localhost:3000
    - Landlord Client: http://localhost:3001
 
@@ -253,6 +351,27 @@ console.log("Merkle tree input:", cred.attributes);
 // In merkleTree.js
 console.log("MerkleTree input length:", input.length);
 ```
+
+### Selective Proof Verification Issues
+
+#### 1. "Cannot verify - missing or insufficient proofs" Error
+**Cause**: Application doesn't meet listing's proof requirements
+**Solution**: 
+- Check listing requirements in landlord dashboard
+- Ensure all required proofs are generated
+- Verify proof values meet minimum requirements
+
+#### 2. "Income Proof insufficient" Error
+**Cause**: Generated income proof doesn't meet listing's minimum income requirement
+**Solution**: Generate new income proof with higher value or choose different listing
+
+#### 3. "Missing Income/Credit Score Proof" Error
+**Cause**: Required proof type not provided in application
+**Solution**: Generate the missing proof type before applying
+
+#### 4. Verification Button Disabled
+**Cause**: Application doesn't meet all listing requirements
+**Solution**: Check the detailed error messages in the application dialog
 
 ### Logs and Monitoring
 - Check individual service logs in their respective directories

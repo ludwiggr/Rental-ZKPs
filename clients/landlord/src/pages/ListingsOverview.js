@@ -129,6 +129,24 @@ function ListingsOverview() {
                                                 <strong>Price:</strong> €{listing.price}
                                             </Typography>
                                         )}
+
+                                        {/* Proof Requirements */}
+                                        {listing.proofRequirements && listing.proofRequirements.length > 0 && (
+                                            <Box sx={{ mb: 2 }}>
+                                                <Typography variant="subtitle2" color="primary" gutterBottom>
+                                                    Required Proofs:
+                                                </Typography>
+                                                {listing.proofRequirements.map((req, index) => (
+                                                    <Typography key={index} variant="body2" color="text.secondary">
+                                                        <strong>{req.type === 'income' ? 'Income' : 'Credit Score'}</strong>
+                                                        {req.minValue && (
+                                                            <span> - Min: {req.type === 'income' ? `€${req.minValue}` : req.minValue}</span>
+                                                        )}
+                                                    </Typography>
+                                                ))}
+                                            </Box>
+                                        )}
+
                                         <Box mt={2}>
                                             <Typography variant="subtitle2" gutterBottom>
                                                 Applications

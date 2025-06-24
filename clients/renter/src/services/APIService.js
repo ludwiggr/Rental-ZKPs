@@ -1,4 +1,3 @@
-const API_BASE_URL = 'http://localhost:3000';
 const EMPLOYER_API_URL = 'http://localhost:3003';
 const BANK_API_URL = 'http://localhost:3002';
 const LANDLORD_API_URL = 'http://localhost:3004';

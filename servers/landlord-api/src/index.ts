@@ -15,6 +15,12 @@ interface Application {
   verificationResult?: boolean;
 }
 
+interface ProofRequirement {
+  type: 'income' | 'creditScore';
+  required: boolean;
+  minValue?: number;
+}
+
 interface Listing {
   id: string;
   name: string;
@@ -23,6 +29,7 @@ interface Listing {
   price: number;
   type: string;
   applications: Application[];
+  proofRequirements: ProofRequirement[];
 }
 
 const execAsync = promisify(exec);
@@ -47,7 +54,19 @@ const listings: Listing[] = [
     size: 75,
     price: 1200,
     type: 'apartment',
-    applications: []
+    applications: [],
+    proofRequirements: [
+      {
+        type: 'income',
+        required: true,
+        minValue: 3000
+      },
+      {
+        type: 'creditScore',
+        required: true,
+        minValue: 650
+      }
+    ]
   },
   {
     id: '2',
@@ -56,7 +75,35 @@ const listings: Listing[] = [
     size: 120,
     price: 1800,
     type: 'house',
-    applications: []
+    applications: [],
+    proofRequirements: [
+      {
+        type: 'income',
+        required: true,
+        minValue: 4500
+      },
+      {
+        type: 'creditScore',
+        required: true,
+        minValue: 700
+      }
+    ]
+  },
+  {
+    id: '3',
+    name: 'Income-Only Studio',
+    address: '789 Simple Street, Downtown',
+    size: 45,
+    price: 800,
+    type: 'studio',
+    applications: [],
+    proofRequirements: [
+      {
+        type: 'income',
+        required: true,
+        minValue: 2000
+      }
+    ]
   }
 ];
 
@@ -98,6 +145,30 @@ app.get('/listings/:id/applications', (req, res) => {
   });
 });
 
+// Get a specific application by ID
+app.get('/listings/:listingId/applications/:applicationId', (req, res) => {
+  const listing = listings.find(l => l.id === req.params.listingId);
+  if (!listing) {
+    return res.status(404).json({
+      success: false,
+      error: 'Listing not found'
+    });
+  }
+
+  const application = listing.applications.find(a => a.id === req.params.applicationId);
+  if (!application) {
+    return res.status(404).json({
+      success: false,
+      error: 'Application not found'
+    });
+  }
+
+  res.json({
+    success: true,
+    application
+  });
+});
+
 // Submit application for a listing
 app.post('/listings/:id/apply', async (req, res) => {
   try {
@@ -110,11 +181,44 @@ app.post('/listings/:id/apply', async (req, res) => {
     }
 
     const { incomeProof, creditScoreProof } = req.body;
-    if (!incomeProof || !creditScoreProof) {
+
+    // Validate required proofs based on listing requirements
+    const incomeRequirement = listing.proofRequirements.find(req => req.type === 'income');
+    const creditRequirement = listing.proofRequirements.find(req => req.type === 'creditScore');
+
+    if (incomeRequirement?.required && !incomeProof) {
       return res.status(400).json({
         success: false,
-        error: 'Both income and credit score proofs are required'
+        error: 'Income proof is required for this listing'
       });
+    }
+
+    if (creditRequirement?.required && !creditScoreProof) {
+      return res.status(400).json({
+        success: false,
+        error: 'Credit score proof is required for this listing'
+      });
+    }
+
+    // Validate proof values against requirements
+    if (incomeRequirement?.required && incomeProof) {
+      const incomeValue = incomeProof.publicSignals?.income || incomeProof.publicSignals?.[0];
+      if (incomeRequirement.minValue && Number(incomeValue) < incomeRequirement.minValue) {
+        return res.status(400).json({
+          success: false,
+          error: `Income must be at least €${incomeRequirement.minValue}`
+        });
+      }
+    }
+
+    if (creditRequirement?.required && creditScoreProof) {
+      const creditValue = creditScoreProof.publicSignals?.creditScore || creditScoreProof.publicSignals?.[0];
+      if (creditRequirement.minValue && Number(creditValue) < creditRequirement.minValue) {
+        return res.status(400).json({
+          success: false,
+          error: `Credit score must be at least ${creditRequirement.minValue}`
+        });
+      }
     }
 
     const application: Application = {
@@ -196,55 +300,87 @@ app.post('/listings/:listingId/applications/:applicationId/verify', async (req, 
       });
     }
 
-    // Verify income proof
-    let incomeResult;
-    try {
-      const incomeProofPath = path.join(workDir, 'income_proof.json');
-      await fs.writeFile(incomeProofPath, JSON.stringify(application.incomeProof));
+    // Verify proofs based on listing requirements
+    const incomeRequirement = listing.proofRequirements.find(req => req.type === 'income');
+    const creditRequirement = listing.proofRequirements.find(req => req.type === 'creditScore');
 
-      incomeResult = await execAsync(`node ${path.join(heimdallPath, 'heimdalljs-verify.js')} ${incomeProofPath}`, {
-        cwd: workDir
-      });
-      console.log('Income proof verification result:', incomeResult.stdout);
-    } catch (error) {
-      console.error('Error verifying income proof:', error);
-      return res.status(500).json({
-        success: false,
-        error: 'Failed to verify income proof'
-      });
+    let incomeResult = null;
+    let creditResult = null;
+
+    // Verify income proof if required
+    if (incomeRequirement && application.incomeProof) {
+      try {
+        const incomeProofPath = path.join(workDir, 'income_proof.json');
+        await fs.writeFile(incomeProofPath, JSON.stringify(application.incomeProof));
+
+        incomeResult = await execAsync(`node ${path.join(heimdallPath, 'heimdalljs-verify.js')} ${incomeProofPath}`, {
+          cwd: workDir
+        });
+        console.log('Income proof verification result:', incomeResult.stdout);
+      } catch (error) {
+        console.error('Error verifying income proof:', error);
+        return res.status(500).json({
+          success: false,
+          error: 'Failed to verify income proof'
+        });
+      }
     }
 
-    // Verify credit score proof
-    let creditResult;
-    try {
-      const creditProofPath = path.join(workDir, 'credit_proof.json');
-      await fs.writeFile(creditProofPath, JSON.stringify(application.creditScoreProof));
+    // Verify credit score proof if required
+    if (creditRequirement && application.creditScoreProof) {
+      try {
+        const creditProofPath = path.join(workDir, 'credit_proof.json');
+        await fs.writeFile(creditProofPath, JSON.stringify(application.creditScoreProof));
 
-      creditResult = await execAsync(`node ${path.join(heimdallPath, 'heimdalljs-verify.js')} ${creditProofPath}`, {
-        cwd: workDir
-      });
-      console.log('Credit score proof verification result:', creditResult.stdout);
-    } catch (error) {
-      console.error('Error verifying credit score proof:', error);
-      return res.status(500).json({
-        success: false,
-        error: 'Failed to verify credit score proof'
-      });
+        creditResult = await execAsync(`node ${path.join(heimdallPath, 'heimdalljs-verify.js')} ${creditProofPath}`, {
+          cwd: workDir
+        });
+        console.log('Credit score proof verification result:', creditResult.stdout);
+      } catch (error) {
+        console.error('Error verifying credit score proof:', error);
+        return res.status(500).json({
+          success: false,
+          error: 'Failed to verify credit score proof'
+        });
+      }
     }
 
-    const verificationResult =
-      incomeResult.stdout.includes('true') &&
-      creditResult.stdout.includes('true');
+    // Determine overall verification result
+    let verificationResult = true;
+    const details: any = {};
+
+    if (incomeRequirement) {
+      if (!application.incomeProof) {
+        verificationResult = false;
+        details.incomeVerification = false;
+        details.incomeError = 'Income proof is required but not provided';
+      } else {
+        details.incomeVerification = incomeResult?.stdout.includes('true') || false;
+        if (!details.incomeVerification) {
+          verificationResult = false;
+        }
+      }
+    }
+
+    if (creditRequirement) {
+      if (!application.creditScoreProof) {
+        verificationResult = false;
+        details.creditVerification = false;
+        details.creditError = 'Credit score proof is required but not provided';
+      } else {
+        details.creditVerification = creditResult?.stdout.includes('true') || false;
+        if (!details.creditVerification) {
+          verificationResult = false;
+        }
+      }
+    }
 
     application.verificationResult = verificationResult;
 
     res.json({
       success: true,
       verified: verificationResult,
-      details: {
-        incomeVerification: incomeResult.stdout.includes('true'),
-        creditVerification: creditResult.stdout.includes('true')
-      }
+      details
     });
   } catch (error) {
     console.error('Error verifying application:', error);
@@ -386,6 +522,44 @@ app.post('/verify-proof/:index', async (req, res) => {
     res.status(500).json({
       success: false,
       error: error instanceof Error ? error.message : 'Failed to verify proof'
+    });
+  }
+});
+
+// Create a new listing
+app.post('/listings', (req, res) => {
+  try {
+    const { name, address, size, price, type, proofRequirements } = req.body;
+
+    if (!name || !address || !size || !price || !type) {
+      return res.status(400).json({
+        success: false,
+        error: 'Missing required fields: name, address, size, price, type'
+      });
+    }
+
+    const newListing: Listing = {
+      id: `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+      name,
+      address,
+      size: Number(size),
+      price: Number(price),
+      type,
+      applications: [],
+      proofRequirements: proofRequirements || []
+    };
+
+    listings.push(newListing);
+
+    res.status(201).json({
+      success: true,
+      listing: newListing
+    });
+  } catch (error) {
+    console.error('Error creating listing:', error);
+    res.status(500).json({
+      success: false,
+      error: error instanceof Error ? error.message : 'Failed to create listing'
     });
   }
 });

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Box, Button, TextField, Typography, Container, Paper, Grid, Alert, CircularProgress, Dialog, DialogTitle, DialogContent, DialogActions } from '@mui/material';
-import { generateIncomeProof, requestCreditCheck } from './services/APIService';
 import APIService from './services/APIService';
+import MainLayout from './layouts/MainLayout';
 
 const RenterApp = () => {
   const [income, setIncome] = useState('');
@@ -14,12 +14,13 @@ const RenterApp = () => {
   const [incomeVerificationResult, setIncomeVerificationResult] = useState(null);
   const [creditVerificationResult, setCreditVerificationResult] = useState(null);
   const [loading, setLoading] = useState(false);
-  const [sendingStatus, setSendingStatus] = useState(null);
+  const [sendingStatus, setSendingStatus] = useState({});
   const [listings, setListings] = useState([]);
   const [listingsError, setListingsError] = useState(null);
   const [listingsLoading, setListingsLoading] = useState(true);
   const [selectedListing, setSelectedListing] = useState(null);
   const [applicationStatus, setApplicationStatus] = useState({});
+  const [applicationIds, setApplicationIds] = useState({});
   const [isApplicationDialogOpen, setIsApplicationDialogOpen] = useState(false);
 
   useEffect(() => {
@@ -44,7 +45,6 @@ const RenterApp = () => {
       setLoading(true);
       setIncomeProof(null);
       setIncomeVerificationResult(null);
-      setSendingStatus(null);
 
       const result = await APIService.generateIncomeProof(parseFloat(income), employerId);
       setIncomeProof(result.proof);
@@ -85,23 +85,6 @@ const RenterApp = () => {
     }
   };
 
-  const handleSendToLandlord = async (proof) => {
-    try {
-      setError(null);
-      setLoading(true);
-      setSendingStatus(null);
-
-      const result = await APIService.sendProofToLandlord(proof);
-      setSendingStatus(result.success);
-      console.log('Sending result:', result);
-    } catch (error) {
-      console.error('Error sending proof to landlord:', error);
-      setError(error.message || 'Failed to send proof to landlord');
-    } finally {
-      setLoading(false);
-    }
-  };
-
   const handleRequestCreditCheck = async () => {
     try {
       setError(null);
@@ -133,9 +116,56 @@ const RenterApp = () => {
     setIsApplicationDialogOpen(true);
   };
 
+  // Function to validate that generated proofs meet listing requirements
+  const validateProofsMeetRequirements = (listing) => {
+    if (!listing?.proofRequirements || listing.proofRequirements.length === 0) {
+      // For listings without specific requirements, require both proofs
+      return incomeProof && creditScoreProof;
+    }
+
+    for (const requirement of listing.proofRequirements) {
+      if (requirement.type === 'income') {
+        if (!incomeProof) return false;
+        // Check if income meets minimum requirement
+        if (requirement.minValue && parseFloat(income) < requirement.minValue) {
+          return false;
+        }
+      } else if (requirement.type === 'creditScore') {
+        if (!creditScoreProof) return false;
+        // Check if credit score meets minimum requirement
+        if (requirement.minValue && parseFloat(creditScore) < requirement.minValue) {
+          return false;
+        }
+      }
+    }
+
+    return true;
+  };
+
   const handleSubmitApplication = async () => {
-    if (!incomeProof || !creditScoreProof) {
-      setError('Please generate both income and credit score proofs before applying');
+    // Validate that proofs meet requirements
+    if (!validateProofsMeetRequirements(selectedListing)) {
+      if (selectedListing?.proofRequirements && selectedListing.proofRequirements.length > 0) {
+        const missingRequirements = [];
+        for (const requirement of selectedListing.proofRequirements) {
+          if (requirement.type === 'income') {
+            if (!incomeProof) {
+              missingRequirements.push('Income proof');
+            } else if (requirement.minValue && parseFloat(income) < requirement.minValue) {
+              missingRequirements.push(`Income proof (minimum €${requirement.minValue} required, you have €${income})`);
+            }
+          } else if (requirement.type === 'creditScore') {
+            if (!creditScoreProof) {
+              missingRequirements.push('Credit score proof');
+            } else if (requirement.minValue && parseFloat(creditScore) < requirement.minValue) {
+              missingRequirements.push(`Credit score proof (minimum ${requirement.minValue} required, you have ${creditScore})`);
+            }
+          }
+        }
+        setError(`Missing or insufficient proofs: ${missingRequirements.join(', ')}`);
+      } else {
+        setError('Please generate both income and credit score proofs before applying');
+      }
       return;
     }
 
@@ -148,13 +178,25 @@ const RenterApp = () => {
         creditScoreProof
       });
 
+      const listingId = selectedListing._id || selectedListing.id;
+      const applicationId = result.application.id;
+
       setApplicationStatus(prev => ({
         ...prev,
-        [selectedListing._id || selectedListing.id]: 'pending'
+        [listingId]: 'pending'
+      }));
+
+      setApplicationIds(prev => ({
+        ...prev,
+        [listingId]: applicationId
+      }));
+
+      setSendingStatus(prev => ({
+        ...prev,
+        [listingId]: 'Application submitted successfully!'
       }));
 
       setIsApplicationDialogOpen(false);
-      setSendingStatus('Application submitted successfully!');
     } catch (err) {
       console.error('Failed to submit application:', err);
       setError(err.message || 'Failed to submit application');
@@ -163,12 +205,42 @@ const RenterApp = () => {
     }
   };
 
+  const checkApplicationStatus = async (listingId, applicationId) => {
+    try {
+      const result = await APIService.getApplicationStatus(listingId, applicationId);
+      if (result.success && result.application) {
+        setApplicationStatus(prev => ({
+          ...prev,
+          [listingId]: result.application.status
+        }));
+      }
+    } catch (error) {
+      console.error('Failed to check application status:', error);
+    }
+  };
+
+  // Check application status periodically
+  useEffect(() => {
+    const interval = setInterval(() => {
+      Object.entries(applicationIds).forEach(([listingId, applicationId]) => {
+        if (applicationStatus[listingId] === 'pending') {
+          checkApplicationStatus(listingId, applicationId);
+        }
+      });
+    }, 5000); // Check every 5 seconds
+
+    return () => clearInterval(interval);
+  }, [applicationIds, applicationStatus]);
+
   return (
-    <Container maxWidth="md">
-      <Box sx={{ my: 4 }}>
-        <Typography variant="h4" component="h1" gutterBottom>
-          Available Listings
-        </Typography>
+    <MainLayout>
+      <Container maxWidth="lg" sx={{ py: 4 }}>
+        {/* Available Listings Section */}
+        <Box display="flex" justifyContent="space-between" alignItems="center" mb={1}>
+          <Typography variant="h4" component="h1">
+            Available Listings
+          </Typography>
+        </Box>
 
         {listingsError && (
           <Alert severity="error" sx={{ mb: 2 }}>
@@ -181,14 +253,14 @@ const RenterApp = () => {
             <CircularProgress />
           </Box>
         ) : (
-          <Grid container spacing={3} sx={{ mb: 4 }}>
+          <Grid container spacing={6} sx={{ mb: 6 }}>
             {listings.length === 0 ? (
               <Grid item xs={12}>
                 <Alert severity="info">No listings available at the moment.</Alert>
               </Grid>
             ) : (
               listings.map((listing) => (
-                <Grid item xs={12} sm={6} md={4} key={listing._id || listing.id}>
+                <Grid item xs={12} sm={6} md={4} lg={3} key={listing._id || listing.id}>
                   <Paper
                     sx={{
                       p: 2,
@@ -217,9 +289,39 @@ const RenterApp = () => {
                         <strong>Type:</strong> {listing.type}
                       </Typography>
                     )}
+
+                    {/* Proof Requirements Section */}
+                    {listing.proofRequirements && listing.proofRequirements.length > 0 && (
+                      <Box sx={{ mb: 2 }}>
+                        <Typography variant="subtitle2" color="primary" gutterBottom>
+                          Required Proofs:
+                        </Typography>
+                        {listing.proofRequirements.map((req, index) => (
+                          <Box key={index} sx={{ mb: 1, pl: 1 }}>
+                            <Typography variant="body2" color="text.secondary">
+                              <strong>{req.type === 'income' ? 'Income Proof' : 'Credit Score Proof'}</strong>
+                              {req.minValue && (
+                                <span> - Min: {req.type === 'income' ? `€${req.minValue}` : req.minValue}</span>
+                              )}
+                            </Typography>
+                          </Box>
+                        ))}
+                      </Box>
+                    )}
+
                     <Box sx={{ mt: 'auto', pt: 2 }}>
+                      {sendingStatus[listing._id || listing.id] ? (
+                        <Alert severity="success" sx={{ mb: 1 }}>
+                          {sendingStatus[listing._id || listing.id]}
+                        </Alert>
+                      ) : null}
                       {applicationStatus[listing._id || listing.id] ? (
-                        <Alert severity="info">
+                        <Alert
+                          severity={
+                            applicationStatus[listing._id || listing.id] === 'approved' ? 'success' :
+                              applicationStatus[listing._id || listing.id] === 'rejected' ? 'error' : 'info'
+                          }
+                        >
                           Application status: {applicationStatus[listing._id || listing.id]}
                         </Alert>
                       ) : (
@@ -241,9 +343,12 @@ const RenterApp = () => {
           </Grid>
         )}
 
-        <Typography variant="h4" component="h1" gutterBottom>
-          Income Verification
-        </Typography>
+        {/* Income Verification Section */}
+        <Box display="flex" justifyContent="space-between" alignItems="center" mb={1}>
+          <Typography variant="h4" component="h1">
+            Income Verification
+          </Typography>
+        </Box>
 
         <Paper sx={{ p: 3, mb: 3 }}>
           <TextField
@@ -305,18 +410,16 @@ const RenterApp = () => {
           </Paper>
         )}
 
-        {sendingStatus !== null && (
-          <Alert severity={sendingStatus ? "success" : "error"} sx={{ mb: 2 }}>
-            {sendingStatus ? "Proof sent to landlord successfully!" : "Failed to send proof to landlord!"}
-          </Alert>
-        )}
+        {/* Credit Score Verification Section */}
+        <Box display="flex" justifyContent="space-between" alignItems="center" mb={1}>
+          <Typography variant="h4" component="h1">
+            Credit Score Verification
+          </Typography>
+        </Box>
 
         <Grid container spacing={3}>
           <Grid item xs={12}>
             <Paper sx={{ p: 3 }}>
-              <Typography variant="h6" gutterBottom>
-                Credit Score Verification
-              </Typography>
               <TextField
                 fullWidth
                 label="Credit Score"
@@ -338,7 +441,6 @@ const RenterApp = () => {
                 variant="contained"
                 onClick={handleRequestCreditCheck}
                 sx={{ mt: 2 }}
-                fullWidth
                 disabled={loading || !creditScore || !bankId}
               >
                 {loading ? <CircularProgress size={24} /> : 'Request Credit Check'}
@@ -376,18 +478,53 @@ const RenterApp = () => {
             <Typography variant="body1" paragraph>
               To apply for this listing, you need to:
             </Typography>
-            <Typography component="div">
-              1. Generate Income Proof {incomeProof ? '✅' : '❌'}
-            </Typography>
-            <Typography component="div">
-              2. Generate Credit Score Proof {creditScoreProof ? '✅' : '❌'}
-            </Typography>
+
+            {selectedListing?.proofRequirements && selectedListing.proofRequirements.length > 0 ? (
+              <>
+                {selectedListing.proofRequirements.map((req, index) => {
+                  const isIncome = req.type === 'income';
+                  const hasProof = isIncome ? incomeProof : creditScoreProof;
+                  const currentValue = isIncome ? parseFloat(income) : parseFloat(creditScore);
+                  const meetsMinimum = req.minValue ? currentValue >= req.minValue : true;
+                  const isValid = hasProof && meetsMinimum;
+
+                  return (
+                    <Box key={index} sx={{ mb: 2 }}>
+                      <Typography component="div" variant="body2">
+                        <strong>{isIncome ? 'Income Proof' : 'Credit Score Proof'}</strong>
+                        {req.minValue && (
+                          <span> - Minimum: {isIncome ? `€${req.minValue}` : req.minValue}</span>
+                        )}
+                        {hasProof ? (
+                          meetsMinimum ? ' ✅' : ` ❌ (You have ${isIncome ? `€${currentValue}` : currentValue}, need ${isIncome ? `€${req.minValue}` : req.minValue})`
+                        ) : ' ❌ (No proof generated)'}
+                      </Typography>
+                    </Box>
+                  );
+                })}
+              </>
+            ) : (
+              <>
+                <Typography component="div">
+                  1. Generate Income Proof {incomeProof ? '✅' : '❌'}
+                </Typography>
+                <Typography component="div">
+                  2. Generate Credit Score Proof {creditScoreProof ? '✅' : '❌'}
+                </Typography>
+              </>
+            )}
+
+            {selectedListing?.proofRequirements && selectedListing.proofRequirements.length > 0 && (
+              <Alert severity="info" sx={{ mt: 2 }}>
+                Make sure your proofs meet the minimum requirements specified above.
+              </Alert>
+            )}
           </DialogContent>
           <DialogActions>
             <Button onClick={() => setIsApplicationDialogOpen(false)}>Cancel</Button>
             <Button
               onClick={handleSubmitApplication}
-              disabled={!incomeProof || !creditScoreProof || loading}
+              disabled={!validateProofsMeetRequirements(selectedListing) || loading}
               variant="contained"
               color="primary"
             >
@@ -395,8 +532,8 @@ const RenterApp = () => {
             </Button>
           </DialogActions>
         </Dialog>
-      </Box>
-    </Container>
+      </Container>
+    </MainLayout>
   );
 };
 

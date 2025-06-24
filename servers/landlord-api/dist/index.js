@@ -1,20 +1,18 @@
-"use strict";
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
-Object.defineProperty(exports, "__esModule", { value: true });
-const express_1 = __importDefault(require("express"));
-const cors_1 = __importDefault(require("cors"));
-const child_process_1 = require("child_process");
-const util_1 = require("util");
-const path_1 = __importDefault(require("path"));
-const promises_1 = __importDefault(require("fs/promises"));
-const execAsync = (0, util_1.promisify)(child_process_1.exec);
-const app = (0, express_1.default)();
+import express from 'express';
+import cors from 'cors';
+import { exec } from 'child_process';
+import { promisify } from 'util';
+import path from 'path';
+import fs from 'fs/promises';
+import { fileURLToPath } from 'url';
+const execAsync = promisify(exec);
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+const app = express();
 const port = process.env.PORT || 3004;
 // Configure CORS - more permissive during development
-app.use((0, cors_1.default)());
-app.use(express_1.default.json());
+app.use(cors());
+app.use(express.json());
 // Store received proofs and listings
 const receivedProofs = [];
 const listings = [
@@ -25,7 +23,19 @@ const listings = [
         size: 75,
         price: 1200,
         type: 'apartment',
-        applications: []
+        applications: [],
+        proofRequirements: [
+            {
+                type: 'income',
+                required: true,
+                minValue: 3000
+            },
+            {
+                type: 'creditScore',
+                required: true,
+                minValue: 650
+            }
+        ]
     },
     {
         id: '2',
@@ -34,7 +44,19 @@ const listings = [
         size: 120,
         price: 1800,
         type: 'house',
-        applications: []
+        applications: [],
+        proofRequirements: [
+            {
+                type: 'income',
+                required: true,
+                minValue: 4500
+            },
+            {
+                type: 'creditScore',
+                required: true,
+                minValue: 700
+            }
+        ]
     }
 ];
 // Get all listings
@@ -72,6 +94,27 @@ app.get('/listings/:id/applications', (req, res) => {
         applications: listing.applications
     });
 });
+// Get a specific application by ID
+app.get('/listings/:listingId/applications/:applicationId', (req, res) => {
+    const listing = listings.find(l => l.id === req.params.listingId);
+    if (!listing) {
+        return res.status(404).json({
+            success: false,
+            error: 'Listing not found'
+        });
+    }
+    const application = listing.applications.find(a => a.id === req.params.applicationId);
+    if (!application) {
+        return res.status(404).json({
+            success: false,
+            error: 'Application not found'
+        });
+    }
+    res.json({
+        success: true,
+        application
+    });
+});
 // Submit application for a listing
 app.post('/listings/:id/apply', async (req, res) => {
     try {
@@ -83,11 +126,39 @@ app.post('/listings/:id/apply', async (req, res) => {
             });
         }
         const { incomeProof, creditScoreProof } = req.body;
-        if (!incomeProof || !creditScoreProof) {
+        // Validate required proofs based on listing requirements
+        const incomeRequirement = listing.proofRequirements.find(req => req.type === 'income');
+        const creditRequirement = listing.proofRequirements.find(req => req.type === 'creditScore');
+        if (incomeRequirement?.required && !incomeProof) {
             return res.status(400).json({
                 success: false,
-                error: 'Both income and credit score proofs are required'
+                error: 'Income proof is required for this listing'
             });
+        }
+        if (creditRequirement?.required && !creditScoreProof) {
+            return res.status(400).json({
+                success: false,
+                error: 'Credit score proof is required for this listing'
+            });
+        }
+        // Validate proof values against requirements
+        if (incomeRequirement?.required && incomeProof) {
+            const incomeValue = incomeProof.publicSignals?.income || incomeProof.publicSignals?.[0];
+            if (incomeRequirement.minValue && Number(incomeValue) < incomeRequirement.minValue) {
+                return res.status(400).json({
+                    success: false,
+                    error: `Income must be at least €${incomeRequirement.minValue}`
+                });
+            }
+        }
+        if (creditRequirement?.required && creditScoreProof) {
+            const creditValue = creditScoreProof.publicSignals?.creditScore || creditScoreProof.publicSignals?.[0];
+            if (creditRequirement.minValue && Number(creditValue) < creditRequirement.minValue) {
+                return res.status(400).json({
+                    success: false,
+                    error: `Credit score must be at least ${creditRequirement.minValue}`
+                });
+            }
         }
         const application = {
             id: `${listing.id}-${listing.applications.length + 1}`,
@@ -129,16 +200,16 @@ app.post('/listings/:listingId/applications/:applicationId/verify', async (req, 
             });
         }
         // Create working directory for verification
-        const workDir = path_1.default.join(process.cwd(), 'temp');
-        await promises_1.default.mkdir(workDir, { recursive: true });
+        const workDir = path.join(process.cwd(), 'temp');
+        await fs.mkdir(workDir, { recursive: true });
         // Get paths to issuer public keys
-        const employerIssuerPkPath = path_1.default.join(process.cwd(), '..', 'employer-api', 'temp', 'employer_issuer_pk.json');
-        const bankIssuerPkPath = path_1.default.join(process.cwd(), '..', 'bank-api', 'temp', 'bank_issuer_pk.json');
-        const heimdallPath = path_1.default.join(process.cwd(), '..', '..', 'heimdall', 'heimdalljs', 'cli');
+        const employerIssuerPkPath = path.join(process.cwd(), '..', 'employer-api', 'temp', 'employer_issuer_pk.json');
+        const bankIssuerPkPath = path.join(process.cwd(), '..', 'bank-api', 'temp', 'bank_issuer_pk.json');
+        const heimdallPath = path.join(process.cwd(), '..', '..', 'heimdall', 'heimdalljs', 'cli');
         // Check if issuer public keys exist
         try {
-            await promises_1.default.access(employerIssuerPkPath);
-            await promises_1.default.access(bankIssuerPkPath);
+            await fs.access(employerIssuerPkPath);
+            await fs.access(bankIssuerPkPath);
         }
         catch (error) {
             console.error('Error accessing issuer public keys:', error);
@@ -149,10 +220,10 @@ app.post('/listings/:listingId/applications/:applicationId/verify', async (req, 
         }
         // Copy issuer public keys to working directory
         try {
-            const employerIssuerPk = await promises_1.default.readFile(employerIssuerPkPath, 'utf-8');
-            const bankIssuerPk = await promises_1.default.readFile(bankIssuerPkPath, 'utf-8');
-            await promises_1.default.writeFile(path_1.default.join(workDir, 'employer_issuer_pk.json'), employerIssuerPk);
-            await promises_1.default.writeFile(path_1.default.join(workDir, 'bank_issuer_pk.json'), bankIssuerPk);
+            const employerIssuerPk = await fs.readFile(employerIssuerPkPath, 'utf-8');
+            const bankIssuerPk = await fs.readFile(bankIssuerPkPath, 'utf-8');
+            await fs.writeFile(path.join(workDir, 'employer_issuer_pk.json'), employerIssuerPk);
+            await fs.writeFile(path.join(workDir, 'bank_issuer_pk.json'), bankIssuerPk);
         }
         catch (error) {
             console.error('Error copying issuer public keys:', error);
@@ -164,9 +235,9 @@ app.post('/listings/:listingId/applications/:applicationId/verify', async (req, 
         // Verify income proof
         let incomeResult;
         try {
-            const incomeProofPath = path_1.default.join(workDir, 'income_proof.json');
-            await promises_1.default.writeFile(incomeProofPath, JSON.stringify(application.incomeProof));
-            incomeResult = await execAsync(`node ${path_1.default.join(heimdallPath, 'heimdalljs-verify.js')} ${incomeProofPath}`, {
+            const incomeProofPath = path.join(workDir, 'income_proof.json');
+            await fs.writeFile(incomeProofPath, JSON.stringify(application.incomeProof));
+            incomeResult = await execAsync(`node ${path.join(heimdallPath, 'heimdalljs-verify.js')} ${incomeProofPath}`, {
                 cwd: workDir
             });
             console.log('Income proof verification result:', incomeResult.stdout);
@@ -181,9 +252,9 @@ app.post('/listings/:listingId/applications/:applicationId/verify', async (req, 
         // Verify credit score proof
         let creditResult;
         try {
-            const creditProofPath = path_1.default.join(workDir, 'credit_proof.json');
-            await promises_1.default.writeFile(creditProofPath, JSON.stringify(application.creditScoreProof));
-            creditResult = await execAsync(`node ${path_1.default.join(heimdallPath, 'heimdalljs-verify.js')} ${creditProofPath}`, {
+            const creditProofPath = path.join(workDir, 'credit_proof.json');
+            await fs.writeFile(creditProofPath, JSON.stringify(application.creditScoreProof));
+            creditResult = await execAsync(`node ${path.join(heimdallPath, 'heimdalljs-verify.js')} ${creditProofPath}`, {
                 cwd: workDir
             });
             console.log('Credit score proof verification result:', creditResult.stdout);
@@ -306,16 +377,16 @@ app.post('/verify-proof/:index', async (req, res) => {
                 error: 'Invalid proof index'
             });
         }
-        const workDir = path_1.default.join(process.cwd(), 'temp');
-        await promises_1.default.mkdir(workDir, { recursive: true });
-        const heimdallPath = path_1.default.join(process.cwd(), '..', '..', 'heimdall', 'heimdalljs', 'cli');
+        const workDir = path.join(process.cwd(), 'temp');
+        await fs.mkdir(workDir, { recursive: true });
+        const heimdallPath = path.join(process.cwd(), '..', '..', 'heimdall', 'heimdalljs', 'cli');
         const proof = receivedProofs[index].proof;
         console.log('Verifying proof:', proof);
         // Save proof to file
-        const proofPath = path_1.default.join(workDir, 'proof_to_verify.json');
-        await promises_1.default.writeFile(proofPath, JSON.stringify(proof));
+        const proofPath = path.join(workDir, 'proof_to_verify.json');
+        await fs.writeFile(proofPath, JSON.stringify(proof));
         // Verify the proof
-        const result = await execAsync(`node ${path_1.default.join(heimdallPath, 'heimdalljs-verify.js')} ${proofPath}`, {
+        const result = await execAsync(`node ${path.join(heimdallPath, 'heimdalljs-verify.js')} ${proofPath}`, {
             cwd: workDir
         });
         const verificationResult = result.stdout.includes('Verification successful');
@@ -330,6 +401,40 @@ app.post('/verify-proof/:index', async (req, res) => {
         res.status(500).json({
             success: false,
             error: error instanceof Error ? error.message : 'Failed to verify proof'
+        });
+    }
+});
+// Create a new listing
+app.post('/listings', (req, res) => {
+    try {
+        const { name, address, size, price, type, proofRequirements } = req.body;
+        if (!name || !address || !size || !price || !type) {
+            return res.status(400).json({
+                success: false,
+                error: 'Missing required fields: name, address, size, price, type'
+            });
+        }
+        const newListing = {
+            id: `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+            name,
+            address,
+            size: Number(size),
+            price: Number(price),
+            type,
+            applications: [],
+            proofRequirements: proofRequirements || []
+        };
+        listings.push(newListing);
+        res.status(201).json({
+            success: true,
+            listing: newListing
+        });
+    }
+    catch (error) {
+        console.error('Error creating listing:', error);
+        res.status(500).json({
+            success: false,
+            error: error instanceof Error ? error.message : 'Failed to create listing'
         });
     }
 });

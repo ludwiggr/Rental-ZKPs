@@ -1,5 +1,17 @@
 import React, { useState } from 'react';
-import {useNavigate} from "react-router-dom";
+import { useNavigate } from "react-router-dom";
+import {
+    Box,
+    Button,
+    TextField,
+    Typography,
+    Paper,
+    FormControlLabel,
+    Checkbox,
+    Alert,
+    Divider,
+    Grid
+} from '@mui/material';
 
 const CreateListing = () => {
     const [formData, setFormData] = useState({
@@ -9,8 +21,19 @@ const CreateListing = () => {
         price: '',
         type: ''
     });
-    const navigate = useNavigate();
 
+    const [proofRequirements, setProofRequirements] = useState({
+        income: {
+            required: false,
+            minValue: ''
+        },
+        creditScore: {
+            required: false,
+            minValue: ''
+        }
+    });
+
+    const navigate = useNavigate();
     const [message, setMessage] = useState(null);
     const [error, setError] = useState(null);
 
@@ -22,21 +45,41 @@ const CreateListing = () => {
         }));
     };
 
+    const handleProofRequirementChange = (proofType, field, value) => {
+        setProofRequirements(prev => ({
+            ...prev,
+            [proofType]: {
+                ...prev[proofType],
+                [field]: value
+            }
+        }));
+    };
+
     const handleSubmit = async (e) => {
         e.preventDefault();
 
-        const token = localStorage.getItem('token');
-        if (!token) {
-            setError('You must be logged in to create a listing.');
-            return;
-        }
-
         try {
-            const res = await fetch('/api/listings', {
+            // Convert proof requirements to the expected format
+            const requirements = [];
+            if (proofRequirements.income.required) {
+                requirements.push({
+                    type: 'income',
+                    required: true,
+                    minValue: proofRequirements.income.minValue ? Number(proofRequirements.income.minValue) : undefined
+                });
+            }
+            if (proofRequirements.creditScore.required) {
+                requirements.push({
+                    type: 'creditScore',
+                    required: true,
+                    minValue: proofRequirements.creditScore.minValue ? Number(proofRequirements.creditScore.minValue) : undefined
+                });
+            }
+
+            const res = await fetch('http://localhost:3004/listings', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    Authorization: `Bearer ${token}`,
                 },
                 body: JSON.stringify({
                     name: formData.name,
@@ -44,13 +87,14 @@ const CreateListing = () => {
                     size: Number(formData.size),
                     price: Number(formData.price),
                     type: formData.type,
+                    proofRequirements: requirements
                 }),
             });
 
             const data = await res.json();
 
             if (!res.ok) {
-                setError(data.message || 'Error creating listing');
+                setError(data.error || 'Error creating listing');
                 setMessage(null);
             } else {
                 setMessage('Listing created successfully!');
@@ -63,77 +107,165 @@ const CreateListing = () => {
     };
 
     return (
-        <div style={{ maxWidth: '500px', margin: '2rem auto', padding: '1rem', border: '1px solid #ccc', borderRadius: '8px' }}>
-            <h2>Create New Listing</h2>
-            {message && <p style={{ color: 'green' }}>{message}</p>}
-            {error && <p style={{ color: 'red' }}>{error}</p>}
-            <form onSubmit={handleSubmit}>
-                <div style={{ marginBottom: '1rem' }}>
-                    <label>Name:</label>
-                    <input
-                        type="text"
-                        name="name"
-                        value={formData.name}
-                        onChange={handleChange}
-                        required
-                        style={{ width: '100%', padding: '0.5rem' }}
-                    />
-                </div>
-                <div style={{ marginBottom: '1rem' }}>
-                    <label>Address:</label>
-                    <input
-                        type="text"
-                        name="address"
-                        value={formData.address}
-                        onChange={handleChange}
-                        required
-                        style={{ width: '100%', padding: '0.5rem' }}
-                    />
-                </div>
-                <div style={{ marginBottom: '1rem' }}>
-                    <label>Size (sqm):</label>
-                    <input
-                        type="number"
-                        name="size"
-                        value={formData.size}
-                        onChange={handleChange}
-                        required
-                        min="1"
-                        style={{ width: '100%', padding: '0.5rem' }}
-                    />
-                </div>
-                <div style={{ marginBottom: '1rem' }}>
-                    <label>Price:</label>
-                    <input
-                        type="number"
-                        name="price"
-                        value={formData.price}
-                        onChange={handleChange}
-                        required
-                        min="1"
-                        style={{ width: '100%', padding: '0.5rem' }}
-                    />
-                </div>
-                <div style={{ marginBottom: '1rem' }}>
-                    <label>Type:</label>
-                    <select
-                        name="type"
-                        value={formData.type}
-                        onChange={handleChange}
-                        required
-                        style={{ width: '100%', padding: '0.5rem' }}
-                    >
-                        <option value="flat">Flat</option>
-                        <option value="house">House</option>
-                        <option value="studio">Studio</option>
-                        <option value="apartment">Apartment</option>
-                    </select>
-                </div>
-                <button type="submit" style={{ padding: '0.5rem 1rem' }}>
-                    Create Listing
-                </button>
-            </form>
-        </div>
+        <Box sx={{ maxWidth: '800px', margin: '2rem auto', padding: '1rem' }}>
+            <Paper sx={{ p: 3 }}>
+                <Typography variant="h4" gutterBottom>Create New Listing</Typography>
+
+                {message && <Alert severity="success" sx={{ mb: 2 }}>{message}</Alert>}
+                {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
+
+                <form onSubmit={handleSubmit}>
+                    <Grid container spacing={3}>
+                        <Grid item xs={12} sm={6}>
+                            <TextField
+                                fullWidth
+                                label="Name"
+                                name="name"
+                                value={formData.name}
+                                onChange={handleChange}
+                                required
+                            />
+                        </Grid>
+                        <Grid item xs={12} sm={6}>
+                            <TextField
+                                fullWidth
+                                label="Address"
+                                name="address"
+                                value={formData.address}
+                                onChange={handleChange}
+                                required
+                            />
+                        </Grid>
+                        <Grid item xs={12} sm={4}>
+                            <TextField
+                                fullWidth
+                                label="Size (sqm)"
+                                name="size"
+                                type="number"
+                                value={formData.size}
+                                onChange={handleChange}
+                                required
+                                inputProps={{ min: 1 }}
+                            />
+                        </Grid>
+                        <Grid item xs={12} sm={4}>
+                            <TextField
+                                fullWidth
+                                label="Price (€)"
+                                name="price"
+                                type="number"
+                                value={formData.price}
+                                onChange={handleChange}
+                                required
+                                inputProps={{ min: 1 }}
+                            />
+                        </Grid>
+                        <Grid item xs={12} sm={4}>
+                            <TextField
+                                fullWidth
+                                select
+                                label="Type"
+                                name="type"
+                                value={formData.type}
+                                onChange={handleChange}
+                                required
+                                SelectProps={{ native: true }}
+                            >
+                                <option value=""></option>
+                                <option value="flat">Flat</option>
+                                <option value="house">House</option>
+                                <option value="studio">Studio</option>
+                                <option value="apartment">Apartment</option>
+                            </TextField>
+                        </Grid>
+                    </Grid>
+
+                    <Divider sx={{ my: 3 }} />
+
+                    <Typography variant="h6" gutterBottom>Proof Requirements</Typography>
+                    <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                        Specify which proofs are required for applicants and their minimum/maximum values.
+                    </Typography>
+
+                    <Grid container spacing={3}>
+                        <Grid item xs={12}>
+                            <Paper variant="outlined" sx={{ p: 2 }}>
+                                <FormControlLabel
+                                    control={
+                                        <Checkbox
+                                            checked={proofRequirements.income.required}
+                                            onChange={(e) => handleProofRequirementChange('income', 'required', e.target.checked)}
+                                        />
+                                    }
+                                    label="Require Income Proof"
+                                />
+                                {proofRequirements.income.required && (
+                                    <Grid container spacing={2} sx={{ mt: 1 }}>
+                                        <Grid item xs={12}>
+                                            <TextField
+                                                fullWidth
+                                                label="Minimum Income (€)"
+                                                type="number"
+                                                value={proofRequirements.income.minValue}
+                                                onChange={(e) => handleProofRequirementChange('income', 'minValue', e.target.value)}
+                                                inputProps={{ min: 0 }}
+                                                helperText="Higher income is always better"
+                                            />
+                                        </Grid>
+                                    </Grid>
+                                )}
+                            </Paper>
+                        </Grid>
+
+                        <Grid item xs={12}>
+                            <Paper variant="outlined" sx={{ p: 2 }}>
+                                <FormControlLabel
+                                    control={
+                                        <Checkbox
+                                            checked={proofRequirements.creditScore.required}
+                                            onChange={(e) => handleProofRequirementChange('creditScore', 'required', e.target.checked)}
+                                        />
+                                    }
+                                    label="Require Credit Score Proof"
+                                />
+                                {proofRequirements.creditScore.required && (
+                                    <Grid container spacing={2} sx={{ mt: 1 }}>
+                                        <Grid item xs={12}>
+                                            <TextField
+                                                fullWidth
+                                                label="Minimum Credit Score"
+                                                type="number"
+                                                value={proofRequirements.creditScore.minValue}
+                                                onChange={(e) => handleProofRequirementChange('creditScore', 'minValue', e.target.value)}
+                                                inputProps={{ min: 300, max: 850 }}
+                                                helperText="Higher credit score is always better"
+                                            />
+                                        </Grid>
+                                    </Grid>
+                                )}
+                            </Paper>
+                        </Grid>
+                    </Grid>
+
+                    <Box sx={{ mt: 3, display: 'flex', gap: 2 }}>
+                        <Button
+                            type="submit"
+                            variant="contained"
+                            size="large"
+                        >
+                            Create Listing
+                        </Button>
+                        <Button
+                            variant="outlined"
+                            size="large"
+                            onClick={() => navigate('/listings-overview')}
+                        >
+                            Cancel
+                        </Button>
+                    </Box>
+                </form>
+            </Paper>
+        </Box>
     );
 };
 
