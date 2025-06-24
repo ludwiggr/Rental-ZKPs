@@ -9,7 +9,7 @@ try {
   execSync([
     "node /Users/ludwiggrober/WebstormProjects/Rental-ZKPs/heimdall/heimdalljs/cli/heimdalljs-pres-attribute.js 8",
     "--expiration 100",
-    "--challenge 1750776158218",
+    "--challenge 1750776989952",
     "--credential /Users/ludwiggrober/WebstormProjects/Rental-ZKPs/servers/employer-api/temp/employer_cred_holder.json",
     "--destination /Users/ludwiggrober/WebstormProjects/Rental-ZKPs/servers/employer-api/temp/employer_pres_attribute.json",
     "--secretKey /Users/ludwiggrober/WebstormProjects/Rental-ZKPs/servers/employer-api/temp/employer_holder_sk.txt",

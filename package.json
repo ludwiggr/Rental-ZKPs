@@ -12,8 +12,7 @@
     "servers/backend",
     "servers/bank-api",
     "servers/employer-api",
-    "servers/landlord-api",
-    "shared"
+    "servers/landlord-api"
   ],
   "scripts": {
     "install:all": "npm install",
