@@ -1,15 +1,18 @@
-const express = require('express');
-const cors = require('cors');
-const dotenv = require('dotenv');
-const { exec } = require('child_process');
-const { promisify } = require('util');
-const path = require('path');
-const fs = require('fs/promises');
-const fsSync = require('fs');  // Add sync version of fs
+import express from 'express';
+import cors from 'cors';
+import dotenv from 'dotenv';
+import { exec } from 'child_process';
+import { promisify } from 'util';
+import path from 'path';
+import fs from 'fs/promises';
+import fsSync from 'fs';
 import { Request, Response } from 'express';
+import { fileURLToPath } from 'url';
 
 const execAsync = promisify(exec);
-const HEIMDALLJS_PATH = path.join(__dirname, '..', '..', '..', 'heimdall', 'heimdalljs', 'heimdall', 'cli');
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+const HEIMDALLJS_PATH = path.join(__dirname, '..', '..', '..', 'heimdall', 'heimdalljs', 'cli');
 const TEMP_DIR = path.join(process.cwd(), 'temp');
 
 dotenv.config();
@@ -164,7 +167,7 @@ app.post('/verify-income', async (req: Request, res: Response) => {
       console.log('Generating presentation...');
 
       // Create a temporary script to generate the presentation
-      const presentationScriptPath = path.join(workDir, 'generate_presentation.js');
+      const presentationScriptPath = path.join(workDir, 'generate_presentation.cjs');
       const presentationScript = `
 const fs = require("fs");
 const { execSync } = require("child_process");
@@ -198,9 +201,6 @@ try {
       console.log('Running presentation generation script...');
       await execAsync(`node ${presentationScriptPath}`, { cwd: workDir, maxBuffer: 1024 * 1024 * 32 });
       console.log('Presentation generation completed');
-
-      // Clean up the temporary script
-      await fs.unlink(presentationScriptPath);
 
       // Read the generated proof
       const proofPath = path.join(workDir, presentationFileName);

@@ -11,7 +11,8 @@ const RenterApp = () => {
   const [incomeProof, setIncomeProof] = useState(null);
   const [creditScoreProof, setCreditScoreProof] = useState(null);
   const [error, setError] = useState(null);
-  const [verificationResult, setVerificationResult] = useState(null);
+  const [incomeVerificationResult, setIncomeVerificationResult] = useState(null);
+  const [creditVerificationResult, setCreditVerificationResult] = useState(null);
   const [loading, setLoading] = useState(false);
   const [sendingStatus, setSendingStatus] = useState(null);
   const [listings, setListings] = useState([]);
@@ -42,7 +43,7 @@ const RenterApp = () => {
       setError(null);
       setLoading(true);
       setIncomeProof(null);
-      setVerificationResult(null);
+      setIncomeVerificationResult(null);
       setSendingStatus(null);
 
       const result = await APIService.generateIncomeProof(parseFloat(income), employerId);
@@ -56,14 +57,25 @@ const RenterApp = () => {
     }
   };
 
-  const handleVerifyProof = async (proof) => {
+  const handleVerifyProof = async (proof, proofType = 'income') => {
     try {
       setError(null);
       setLoading(true);
-      setVerificationResult(null);
+
+      if (proofType === 'income') {
+        setIncomeVerificationResult(null);
+      } else {
+        setCreditVerificationResult(null);
+      }
 
       const result = await APIService.verifyProof(proof);
-      setVerificationResult(result.success);
+
+      if (proofType === 'income') {
+        setIncomeVerificationResult(result.success);
+      } else {
+        setCreditVerificationResult(result.success);
+      }
+
       console.log('Verification result:', result);
     } catch (error) {
       console.error('Error verifying proof:', error);
@@ -95,6 +107,7 @@ const RenterApp = () => {
       setError(null);
       setLoading(true);
       setCreditScoreProof(null);
+      setCreditVerificationResult(null);
 
       const result = await APIService.requestCreditCheck({
         creditScore: parseFloat(creditScore),
@@ -276,31 +289,20 @@ const RenterApp = () => {
                 {JSON.stringify(incomeProof, null, 2)}
               </pre>
             </Box>
-            <Box sx={{ display: 'flex', gap: 2 }}>
-              <Button
-                variant="contained"
-                color="primary"
-                onClick={() => handleVerifyProof(incomeProof)}
-                disabled={loading}
-              >
-                {loading ? <CircularProgress size={24} /> : 'Verify Proof'}
-              </Button>
-              <Button
-                variant="contained"
-                color="secondary"
-                onClick={() => handleSendToLandlord(incomeProof)}
-                disabled={loading}
-              >
-                {loading ? <CircularProgress size={24} /> : 'Send to Landlord'}
-              </Button>
-            </Box>
+            <Button
+              variant="contained"
+              color="primary"
+              onClick={() => handleVerifyProof(incomeProof, 'income')}
+              disabled={loading}
+            >
+              {loading ? <CircularProgress size={24} /> : 'Verify Proof'}
+            </Button>
+            {incomeVerificationResult !== null && (
+              <Alert severity={incomeVerificationResult ? "success" : "error"} sx={{ mt: 2 }}>
+                {incomeVerificationResult ? "Proof verified successfully!" : "Proof verification failed!"}
+              </Alert>
+            )}
           </Paper>
-        )}
-
-        {verificationResult !== null && (
-          <Alert severity={verificationResult ? "success" : "error"} sx={{ mb: 2 }}>
-            {verificationResult ? "Proof verified successfully!" : "Proof verification failed!"}
-          </Alert>
         )}
 
         {sendingStatus !== null && (
@@ -310,7 +312,7 @@ const RenterApp = () => {
         )}
 
         <Grid container spacing={3}>
-          <Grid item xs={12} md={6}>
+          <Grid item xs={12}>
             <Paper sx={{ p: 3 }}>
               <Typography variant="h6" gutterBottom>
                 Credit Score Verification
@@ -349,24 +351,19 @@ const RenterApp = () => {
                       {JSON.stringify(creditScoreProof, null, 2)}
                     </pre>
                   </Box>
-                  <Box sx={{ display: 'flex', gap: 2 }}>
-                    <Button
-                      variant="contained"
-                      color="primary"
-                      onClick={() => handleVerifyProof(creditScoreProof)}
-                      disabled={loading}
-                    >
-                      {loading ? <CircularProgress size={24} /> : 'Verify Proof'}
-                    </Button>
-                    <Button
-                      variant="contained"
-                      color="secondary"
-                      onClick={() => handleSendToLandlord(creditScoreProof)}
-                      disabled={loading}
-                    >
-                      {loading ? <CircularProgress size={24} /> : 'Send to Landlord'}
-                    </Button>
-                  </Box>
+                  <Button
+                    variant="contained"
+                    color="primary"
+                    onClick={() => handleVerifyProof(creditScoreProof, 'credit')}
+                    disabled={loading}
+                  >
+                    {loading ? <CircularProgress size={24} /> : 'Verify Proof'}
+                  </Button>
+                  {creditVerificationResult !== null && (
+                    <Alert severity={creditVerificationResult ? "success" : "error"} sx={{ mt: 2 }}>
+                      {creditVerificationResult ? "Proof verified successfully!" : "Proof verification failed!"}
+                    </Alert>
+                  )}
                 </Box>
               )}
             </Paper>
