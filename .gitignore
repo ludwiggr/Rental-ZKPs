@@ -2,7 +2,6 @@
 node_modules/
 
 # Generated files
-*.json
 *.txt
 !package.json
 !tsconfig.json
