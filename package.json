@@ -6,7 +6,9 @@
     "clients/landlord",
     "clients/login",
     "clients/renter",
-    "heimdall/heimdalljs/heimdall",
+    "heimdall",
+    "heimdall/circom/lib/circomlib",
+    "heimdall/heimdalljs",
     "servers/backend",
     "servers/bank-api",
     "servers/employer-api",
@@ -14,6 +16,18 @@
     "shared"
   ],
   "scripts": {
-    "install:all": "npm install"
+    "install:all": "npm install",
+    "dev": "concurrently \"npm run dev:employer-api\" \"npm run dev:bank-api\" \"npm run dev:landlord-api\" \"npm run dev:renter-client\" \"npm run dev:landlord-client\"",
+    "dev:employer-api": "npm run dev --workspace=rental-zkp-employer-api",
+    "dev:bank-api": "npm run dev --workspace=rental-zkp-bank-api",
+    "dev:landlord-api": "npm run dev --workspace=rental-zkp-landlord-api",
+    "dev:renter-client": "npm run start --workspace=renter-client",
+    "dev:landlord-client": "npm run start --workspace=landlord-client",
+    "build:all": "npm run build --workspaces",
+    "build:apis": "concurrently \"npm run build --workspace=rental-zkp-employer-api\" \"npm run build --workspace=rental-zkp-bank-api\" \"npm run build --workspace=rental-zkp-landlord-api\"",
+    "build:clients": "concurrently \"npm run build --workspace=renter-client\" \"npm run build --workspace=landlord-client\""
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2"
   }
 }
