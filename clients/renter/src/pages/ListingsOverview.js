@@ -1,9 +1,30 @@
-import React, { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, {useEffect, useState} from 'react';
+import {useNavigate} from 'react-router-dom';
+import {api} from "../services/api";
+import {
+    Box,
+    Button,
+    Card,
+    CardContent,
+    CardActions,
+    Typography,
+    Grid,
+    Alert,
+    CircularProgress,
+    Container,
+    Chip,
+    Stack,
+    IconButton,
+    Tooltip
+} from '@mui/material';
+import AddIcon from '@mui/icons-material/Add';
+import VisibilityIcon from '@mui/icons-material/Visibility';
+import PersonIcon from '@mui/icons-material/Person';
 
-function Listings() {
+function ListingsOverview() {
     const [listings, setListings] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
     const navigate = useNavigate();
 
     useEffect(() => {
@@ -11,17 +32,8 @@ function Listings() {
             const token = localStorage.getItem('token');
 
             try {
-                const res = await fetch('/api/listings?mine=false', {
-                    headers: {
-                        Authorization: `Bearer ${token}`,
-                    },
-                });
+                const data = await api.getListings(token);
 
-                if (!res.ok) {
-                    throw new Error('Failed to fetch listings');
-                }
-
-                const data = await res.json();
                 setListings(data.listings);
             } catch (err) {
                 console.error(err);
@@ -32,98 +44,146 @@ function Listings() {
         fetchListings();
     }, [navigate]);
 
-    const applyToListing = async (listingId) => {
-        console.log(listingId);
-        try {
-            const token = localStorage.getItem('token')
+    const getApplicationStatus = (applications = []) => {
 
-            const response = await fetch(`/api/listings/${listingId}/apply`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    Authorization: `Bearer ${token}`,
-                },
-            });
-
-            const data = await response.json();
-
-            if (!response.ok) {
-                throw new Error(data.message || 'Something went wrong');
-            }
-
-            alert('Successfully applied to the listing');
-        } catch (error) {
-            console.error('Error applying:', error);
-            alert(error.message);
+        if (loading) {
+            return (
+                <Box display="flex" justifyContent="center" alignItems="center" minHeight="100vh" width="100vw">
+                    <CircularProgress/>
+                </Box>
+            );
         }
-    };
 
-    if (loading) return <div style={styles.loading}>Loading...</div>;
+        if (error) {
+            return (
+                <Box display="flex" justifyContent="center" alignItems="center" minHeight="100vh" width="100vw">
+                    <Container maxWidth="lg" sx={{mt: 4}}>
+                        <Alert severity="error">{error}</Alert>
+                    </Container>
+                </Box>
+            );
+        }
 
-    return (
-        <div style={styles.page}>
-            <div style={styles.header}>
-                <h2>Your Listings</h2>
-            </div>
+        return (
+            <Container maxWidth={false} sx={{py: 0, width: '100vw', px: 0}}>
+                <Box display="flex" justifyContent="space-between" alignItems="center" mb={4}>
+                    <Typography variant="h4" component="h1" sx={{flexGrow: 1}}>
+                        Your Listings
+                    </Typography>
+                    <Button
+                        variant="contained"
+                        startIcon={null}
+                        onClick={() => navigate('/create-listing')}
+                        sx={{minWidth: 0, width: 40, height: 40, borderRadius: '50%', p: 0}}
+                    >
+                        <AddIcon/>
+                    </Button>
+                </Box>
 
-            <div style={styles.grid}>
-                {listings.map((listing, index) => (
-                    <div key={index} style={{ ...styles.card, position: 'relative' }}>
-                        <button
-                            onClick={() => applyToListing(listing._id)}
-                            style={{
-                                position: 'absolute',
-                                top: '10px',
-                                right: '10px',
-                                backgroundColor: '#eee',
-                                border: 'none',
-                                borderRadius: '50%',
-                                width: '30px',
-                                height: '30px',
-                                cursor: 'pointer',
-                                fontWeight: 'bold',
-                            }}
-                            title="View details"
-                        >
-                            apply
-                        </button>
-                        <h3>{listing.name}</h3>
-                        <p><strong>Address:</strong> {listing.address}</p>
-                        <p><strong>Size:</strong> {listing.size} m²</p>
-                        <p><strong>Number of applicants:</strong> {listing.applicants?.length || 0}</p>
-                    </div>
-                ))}
-            </div>
-        </div>
-    );
+                <Grid container spacing={3}>
+                    {listings.length === 0 ? (
+                        <Grid item xs={12}>
+                            <Alert severity="info">
+                                No listings found. Create your first listing!
+                            </Alert>
+                        </Grid>
+                    ) : (
+                        listings.map((listing) => {
+                            const stats = getApplicationStatus(listing.applications);
+                            return (
+                                <Grid item xs={12} sm={6} md={4} key={listing.id}>
+                                    <Card>
+                                        <CardContent>
+                                            <Box display="flex" justifyContent="space-between" alignItems="flex-start">
+                                                <Typography variant="h6" gutterBottom>
+                                                    {listing.name || 'Unnamed Listing'}
+                                                </Typography>
+
+                                            </Box>
+                                            <Typography color="textSecondary" gutterBottom>
+                                                {listing.address || 'No address provided'}
+                                            </Typography>
+                                            <Typography variant="body2" paragraph>
+                                                <strong>Size:</strong> {listing.size || 'N/A'} m²
+                                            </Typography>
+                                            {listing.price && (
+                                                <Typography variant="body2" paragraph>
+                                                    <strong>Price:</strong> €{listing.price}
+                                                </Typography>
+                                            )}
+
+                                            {/* Proof Requirements */}
+
+                                            {(listing.incomeRequirement || listing.creditScoreRequirement) && (
+                                                <Box sx={{mb: 2}}>
+                                                    <Typography variant="subtitle2" color="primary" gutterBottom>
+                                                        Required Proofs:
+                                                    </Typography>
+                                                    {listing.incomeRequirement && (
+                                                        <Typography variant="body2" color="text.secondary">
+                                                            <strong>Income</strong>
+                                                            <span> - Min: €${listing.incomeRequirement}</span>
+                                                        </Typography>)}
+                                                    {listing.creditScoreRequirement && (
+                                                        <Typography variant="body2" color="text.secondary">
+                                                            <strong>Income</strong>
+                                                            <span> - Min: ${listing.creditScoreRequirement}</span>
+                                                        </Typography>)}
+                                                </Box>
+                                            )}
+
+                                            <Box mt={2}>
+                                                <Typography variant="subtitle2" gutterBottom>
+                                                    Applications
+                                                </Typography>
+                                                <Stack direction="row" spacing={1}>
+                                                    <Chip
+                                                        icon={<PersonIcon/>}
+                                                        label={`${stats.total} Total`}
+                                                        size="small"
+                                                    />
+                                                    {stats.pending > 0 && (
+                                                        <Chip
+                                                            label={`${stats.pending} Pending`}
+                                                            size="small"
+                                                            color="primary"
+                                                        />
+                                                    )}
+                                                    {stats.approved > 0 && (
+                                                        <Chip
+                                                            label={`${stats.approved} Approved`}
+                                                            size="small"
+                                                            color="success"
+                                                        />
+                                                    )}
+                                                    {stats.rejected > 0 && (
+                                                        <Chip
+                                                            label={`${stats.rejected} Rejected`}
+                                                            size="small"
+                                                            color="error"
+                                                        />
+                                                    )}
+                                                </Stack>
+                                            </Box>
+                                        </CardContent>
+                                        <CardActions>
+                                            <Button
+                                                size="small"
+                                                onClick={() => navigate(`/apply/${listing.id}`)}
+                                                startIcon={<VisibilityIcon/>}
+                                            >
+                                                Apply
+                                            </Button>
+                                        </CardActions>
+                                    </Card>
+                                </Grid>
+                            );
+                        })
+                    )}
+                </Grid>
+            </Container>
+        );
+    }
 }
 
-const styles = {
-    page: {
-        padding: '2rem',
-        fontFamily: 'Arial, sans-serif',
-    },
-    header: {
-        display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        marginBottom: '1rem',
-    },
-    grid: {
-        display: 'grid',
-        gap: '1rem',
-        gridTemplateColumns: 'repeat(auto-fill, minmax(250px, 1fr))',
-    },
-    card: {
-        border: '1px solid #ccc',
-        borderRadius: '10px',
-        padding: '1rem',
-        background: '#f9f9f9',
-    },
-    loading: {
-        textAlign: 'center',
-        padding: '2rem',
-    },
-};
-
-export default Listings;
+export default ListingsOverview;

@@ -12,9 +12,10 @@ function DummyLandingPage() {
                 window.location.href = `http://login.localhost/login`;
             }
             localStorage.setItem('token', token);
+            navigate('/listings-overview');
         }
-        getToken()
-        navigate('/listings-overview')
+        getToken();
+
     }, [navigate]);
 
     return (<div>Loading...</div>)

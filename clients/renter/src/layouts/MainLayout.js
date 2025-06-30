@@ -41,14 +41,14 @@ function NavBar() {
     );
 }
 
-function MainLayout({ children }) {
+function MainLayout() {
     return (
         <div style={styles.main}>
             <NavBar />
             <main style={{
                 backgroundColor: '#f0f0f0', // Light gray background
             }}>
-                {children}
+                <Outlet />
             </main>
         </div>
     );
