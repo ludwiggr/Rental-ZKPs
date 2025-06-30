@@ -1,6 +1,6 @@
-import React, { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { api } from '../services/api';
+import React, {useEffect, useState} from 'react';
+import {useNavigate} from 'react-router-dom';
+import {api} from '../services/api';
 import {
     Box,
     Button,
@@ -29,13 +29,15 @@ function ListingsOverview() {
 
     useEffect(() => {
         const fetchListings = async () => {
+            const token = localStorage.getItem('token');
+
             try {
-                const data = await api.getListings();
-                setListings(data.listings || []);
-                setError(null);
+                const data = await api.getListings(token);
+                setListings(data.listings);
+                console.log(data);
             } catch (err) {
-                console.error('Failed to fetch listings:', err);
-                setError('Failed to load listings. Please try again later.');
+                console.error(err);
+                setError(error)
             } finally {
                 setLoading(false);
             }
@@ -62,32 +64,36 @@ function ListingsOverview() {
 
     if (loading) {
         return (
-            <Box display="flex" justifyContent="center" alignItems="center" minHeight="400px">
-                <CircularProgress />
+            <Box display="flex" justifyContent="center" alignItems="center" minHeight="100vh" width="100vw">
+                <CircularProgress/>
             </Box>
         );
     }
 
     if (error) {
         return (
-            <Container maxWidth="lg" sx={{ mt: 4 }}>
-                <Alert severity="error">{error}</Alert>
-            </Container>
+            <Box display="flex" justifyContent="center" alignItems="center" minHeight="100vh" width="100vw">
+                <Container maxWidth="lg" sx={{mt: 4}}>
+                    <Alert severity="error">{error}</Alert>
+                </Container>
+            </Box>
         );
     }
 
+    // ToDo: Fix padding of body. x padding left and right should be 30 as in the header.
     return (
-        <Container maxWidth="lg" sx={{ py: 4 }}>
+        <Container maxWidth={false} sx={{py: 0, width: '100vw', px: 0}}>
             <Box display="flex" justifyContent="space-between" alignItems="center" mb={4}>
-                <Typography variant="h4" component="h1">
+                <Typography variant="h4" component="h1" sx={{flexGrow: 1}}>
                     Your Listings
                 </Typography>
                 <Button
                     variant="contained"
-                    startIcon={<AddIcon />}
+                    startIcon={null}
                     onClick={() => navigate('/create-listing')}
+                    sx={{ minWidth: 0, width: 40, height: 40, borderRadius: '50%', p: 0 }}
                 >
-                    New Listing
+                    <AddIcon />
                 </Button>
             </Box>
 
@@ -114,7 +120,7 @@ function ListingsOverview() {
                                                     size="small"
                                                     onClick={() => navigate(`/listing/${listing.id}`)}
                                                 >
-                                                    <VisibilityIcon />
+                                                    <VisibilityIcon/>
                                                 </IconButton>
                                             </Tooltip>
                                         </Box>
@@ -131,19 +137,22 @@ function ListingsOverview() {
                                         )}
 
                                         {/* Proof Requirements */}
-                                        {listing.proofRequirements && listing.proofRequirements.length > 0 && (
-                                            <Box sx={{ mb: 2 }}>
+
+                                        {(listing.incomeRequirement || listing.creditScoreRequirement) && (
+                                            <Box sx={{mb: 2}}>
                                                 <Typography variant="subtitle2" color="primary" gutterBottom>
                                                     Required Proofs:
                                                 </Typography>
-                                                {listing.proofRequirements.map((req, index) => (
-                                                    <Typography key={index} variant="body2" color="text.secondary">
-                                                        <strong>{req.type === 'income' ? 'Income' : 'Credit Score'}</strong>
-                                                        {req.minValue && (
-                                                            <span> - Min: {req.type === 'income' ? `€${req.minValue}` : req.minValue}</span>
-                                                        )}
-                                                    </Typography>
-                                                ))}
+                                                {listing.incomeRequirement && (
+                                                <Typography variant="body2" color="text.secondary">
+                                                    <strong>Income</strong>
+                                                    <span> - Min: €${listing.incomeRequirement}</span>
+                                                </Typography>)}
+                                                {listing.creditScoreRequirement && (
+                                                    <Typography variant="body2" color="text.secondary">
+                                                        <strong>Income</strong>
+                                                        <span> - Min: ${listing.creditScoreRequirement}</span>
+                                                    </Typography>)}
                                             </Box>
                                         )}
 
@@ -153,7 +162,7 @@ function ListingsOverview() {
                                             </Typography>
                                             <Stack direction="row" spacing={1}>
                                                 <Chip
-                                                    icon={<PersonIcon />}
+                                                    icon={<PersonIcon/>}
                                                     label={`${stats.total} Total`}
                                                     size="small"
                                                 />
@@ -185,7 +194,7 @@ function ListingsOverview() {
                                         <Button
                                             size="small"
                                             onClick={() => navigate(`/listing/${listing.id}`)}
-                                            startIcon={<VisibilityIcon />}
+                                            startIcon={<VisibilityIcon/>}
                                         >
                                             View Details
                                         </Button>

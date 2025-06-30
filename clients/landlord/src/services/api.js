@@ -1,12 +1,19 @@
-const API_BASE_URL = 'http://localhost:3004';
+const API_BASE_URL = '/api';
 
 export const api = {
-    async getListings() {
-        const response = await fetch(`${API_BASE_URL}/listings`);
-        if (!response.ok) {
+    async getListings(token) {
+        const res = await fetch(`${API_BASE_URL}/listings?mine=true`, {
+            headers: {
+                Authorization: `Bearer ${token}`,
+            },
+        });
+
+        if (!res.ok) {
             throw new Error('Failed to fetch listings');
         }
-        return response.json();
+        const data = await res.json();
+        console.log(data);
+        return data;
     },
 
     async createListing(listingData) {

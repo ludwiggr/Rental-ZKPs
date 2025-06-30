@@ -6,6 +6,7 @@ const jwt = require('jsonwebtoken');
 const {JWT_SECRET, JWT_EXPIRES_IN} = require('../config/config');
 
 
+// Get all Listings
 router.get('/', async (req, res) => {
     console.log("GET request received", req.body);
     let userId;
@@ -20,6 +21,7 @@ router.get('/', async (req, res) => {
     try {
         const listings = await Listing.find(query);
         res.json({listings});
+        console.log(listings);
     } catch (err) {
         res.status(500).json({message: 'Failed to fetch listings'});
     }
@@ -37,13 +39,28 @@ router.post('/', async (req, res) => {
     }
 
     try {
-        const {name, address, size, price, type} = req.body;
+        const {name, address, size, price, type,  incomeRequirement, creditScoreRequirement} = req.body;
 
-        if (!name || !address || !size || !price || !type) {
+        if (!name || !address || !size || !price || !type ) {
             return res.status(400).json({error: 'Missing required fields'});
         }
 
-        const newListing = new Listing({name, address, size, createdBy: userId, price, type});
+        const newListingData = {
+            name,
+            address,
+            size,
+            createdBy: userId,
+            price,
+            type
+        };
+        if (incomeRequirement !== undefined) {
+            newListingData.incomeRequirement = incomeRequirement;
+        }
+        if (creditScoreRequirement !== undefined) {
+            newListingData.creditScoreRequirement = creditScoreRequirement;
+        }
+
+        const newListing = new Listing(newListingData);
 
         const savedListing = await newListing.save();
 
@@ -54,6 +71,7 @@ router.post('/', async (req, res) => {
     }
 });
 
+// Get a specific Listing by ID
 router.get('/:id', async (req, res) => {
 
     try {
@@ -71,6 +89,7 @@ router.get('/:id', async (req, res) => {
     }
 });
 
+// Delete a Listing by ID
 router.delete('/:id', async (req, res) => {
     let userId;
     try {
@@ -97,6 +116,7 @@ router.delete('/:id', async (req, res) => {
     }
 });
 
+// Apply to a Listing
 router.post('/:id/apply', async (req, res) => {
     let userId;
 

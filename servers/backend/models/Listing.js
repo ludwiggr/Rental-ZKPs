@@ -12,7 +12,9 @@ const listingSchema = new mongoose.Schema({
         type: String,
         enum: ['flat', 'house', 'studio', 'apartment'], // add more if needed
         required: true
-    }
+    },
+    incomeRequirement: { type: Number, required: false, default: undefined },
+    creditScoreRequirement: { type: Number, required: false, default: undefined },
 });
 
 console.log("Schema 'Listing' created");
