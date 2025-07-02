@@ -14,7 +14,6 @@ RUN npm install
 # Copy the rest of the backend source code
 COPY servers/bank-api .
 
-
 # Heimdall-CLI ins Image kopieren
 COPY heimdall ./heimdall
 

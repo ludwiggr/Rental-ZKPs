@@ -30,7 +30,8 @@ services:
       - "80"
   backend_server_service:
     build:
-      context: servers/backend
+      context: .
+      dockerfile: servers/backend/Dockerfile
     container_name: backend-server-container
     expose:
       - "3000"
@@ -51,8 +52,8 @@ services:
       - "3000:3000"
     environment:
       - NODE_ENV=development
-#    depends_on:
-#      - database_service
+    depends_on:
+      - bank_database_service
 #    volumes:
 #      - ./servers/bank-backend_api:/app
 #      - /app/node_modules
@@ -67,6 +68,16 @@ services:
       MONGO_INITDB_ROOT_PASSWORD: example
     volumes:
       - mongo-data:/data/db
+  bank_database_service:
+    image: mongo:latest
+    container_name: bank-database-container
+    expose:
+      - "27017"
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: root
+      MONGO_INITDB_ROOT_PASSWORD: example
+    volumes:
+      - bank-mongo-data:/data/db
   nginx_service:
     image: nginx:latest
     container_name: nginx-container
@@ -81,3 +92,4 @@ services:
       - backend_server_service
 volumes:
   mongo-data:
+  bank-mongo-data:
