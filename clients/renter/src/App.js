@@ -4,7 +4,7 @@ import {Routes, Route} from 'react-router-dom';
 // Import page components
 import ListingsOverview from './pages/ListingsOverview';
 import DummyLandingPage from './pages/DummyLandingPage';
-// import Apply from "./pages/Apply";
+import Apply from "./pages/Apply";
 
 // Layouts
 import MainLayout from './layouts/MainLayout';
@@ -18,13 +18,8 @@ function App() {
                 {/* Redirect from root to listings overview */}
                 <Route path="/landing" element={<DummyLandingPage />} />
                 <Route path="/listings-overview" element={<ListingsOverview />} />
+                <Route path="/apply/:id" element={<Apply/>}/>
             </Route>
-
-            {/* Public Routes with optional layout */}
-            {/*<Route element={<MainLayout/>}>*/}
-            {/*    <Route path="/apply:id" element={<Apply/>}/>*/}
-            {/*</Route>*/}
-
         </Routes>
 
     );
