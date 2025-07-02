@@ -46,9 +46,9 @@ Rental-ZKPs/
 │   └── heimdalljs/             # JavaScript implementation
 ├── servers/                    # Backend APIs
 │   ├── backend/                # Main backend service
-│   ├── bank-api/               # Bank verification API (port 3002)
-│   ├── employer-api/           # Employer verification API (port 3003)
-│   └── landlord-api/           # Landlord management API (port 3004)
+│   ├── bank-backend_api/               # Bank verification API (port 3002)
+│   ├── employer-backend_api/           # Employer verification API (port 3003)
+│   └── landlord-backend_api/           # Landlord management API (port 3004)
 ├── shared/                     # Shared utilities and types
 └── nginx/                      # Reverse proxy configuration
 ```
@@ -61,9 +61,9 @@ Rental-ZKPs/
 npm run dev
 
 # Run individual services
-npm run dev:employer-api      # Employer API (port 3003)
-npm run dev:bank-api          # Bank API (port 3002)
-npm run dev:landlord-api      # Landlord API (port 3004)
+npm run dev:employer-backend_api      # Employer API (port 3003)
+npm run dev:bank-backend_api          # Bank API (port 3002)
+npm run dev:landlord-backend_api      # Landlord API (port 3004)
 npm run dev:renter-client     # Renter client (port 3000)
 npm run dev:landlord-client   # Landlord client (port 3001)
 ```
@@ -259,7 +259,7 @@ User Attributes (8):
 - **Merkle tree input**: Must be power of 2
 
 ### File Management
-All generated files are stored in `servers/employer-api/temp/`:
+All generated files are stored in `servers/employer-backend_api/temp/`:
 - `employer_attr_issuer.json` - Input attributes
 - `employer_cred_holder.json` - Generated credential
 - `employer_holder_pk.json` - Holder public key
@@ -316,7 +316,7 @@ The system includes three sample listings with different proof requirements:
    - Landlord Client: http://localhost:3001
 
 ### Verify Generated Files
-Check the `servers/employer-api/temp/` directory for generated proof files after successful verification.
+Check the `servers/employer-backend_api/temp/` directory for generated proof files after successful verification.
 
 ## 🐛 Troubleshooting
 
@@ -375,7 +375,7 @@ console.log("MerkleTree input length:", input.length);
 
 ### Logs and Monitoring
 - Check individual service logs in their respective directories
-- Monitor file generation in `servers/employer-api/temp/`
+- Monitor file generation in `servers/employer-backend_api/temp/`
 - Verify API responses with curl or Postman
 
 ## 🔒 Security Considerations

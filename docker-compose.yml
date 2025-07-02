@@ -54,7 +54,7 @@ services:
 #    depends_on:
 #      - database_service
 #    volumes:
-#      - ./servers/bank-api:/app
+#      - ./servers/bank-backend_api:/app
 #      - /app/node_modules
 
   database_service:
