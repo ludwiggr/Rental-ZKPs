@@ -108,21 +108,13 @@ function ListingsOverview() {
                     listings.map((listing) => {
                         const stats = getApplicationStats(listing.applications);
                         return (
-                            <Grid item xs={12} sm={6} md={4} key={listing.id}>
+                            <Grid item xs={12} sm={6} md={4} key={listing._id}>
                                 <Card>
                                     <CardContent>
                                         <Box display="flex" justifyContent="space-between" alignItems="flex-start">
                                             <Typography variant="h6" gutterBottom>
                                                 {listing.name || 'Unnamed Listing'}
                                             </Typography>
-                                            <Tooltip title="View Details">
-                                                <IconButton
-                                                    size="small"
-                                                    onClick={() => navigate(`/listing/${listing.id}`)}
-                                                >
-                                                    <VisibilityIcon/>
-                                                </IconButton>
-                                            </Tooltip>
                                         </Box>
                                         <Typography color="textSecondary" gutterBottom>
                                             {listing.address || 'No address provided'}
@@ -146,18 +138,18 @@ function ListingsOverview() {
                                                 {listing.incomeRequirement && (
                                                 <Typography variant="body2" color="text.secondary">
                                                     <strong>Income</strong>
-                                                    <span> - Min: €${listing.incomeRequirement}</span>
+                                                    <span> - Min: €{listing.incomeRequirement}</span>
                                                 </Typography>)}
                                                 {listing.creditScoreRequirement && (
                                                     <Typography variant="body2" color="text.secondary">
-                                                        <strong>Income</strong>
-                                                        <span> - Min: ${listing.creditScoreRequirement}</span>
+                                                        <strong>Credit Score</strong>
+                                                        <span> - Min: {listing.creditScoreRequirement}</span>
                                                     </Typography>)}
                                             </Box>
                                         )}
 
                                         <Box mt={2}>
-                                            <Typography variant="subtitle2" gutterBottom>
+                                            <Typography variant="subtitle2" color="primary" gutterBottom>
                                                 Applications
                                             </Typography>
                                             <Stack direction="row" spacing={1}>
@@ -193,7 +185,7 @@ function ListingsOverview() {
                                     <CardActions>
                                         <Button
                                             size="small"
-                                            onClick={() => navigate(`/listing/${listing.id}`)}
+                                            onClick={() => navigate(`/listing/${listing._id}`)}
                                             startIcon={<VisibilityIcon/>}
                                         >
                                             View Details

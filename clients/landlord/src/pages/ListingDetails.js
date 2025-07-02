@@ -1,6 +1,6 @@
-import React, { useEffect, useState } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
-import { api } from '../services/api';
+import React, {useEffect, useState} from 'react';
+import {useParams, useNavigate} from 'react-router-dom';
+import {api} from '../services/api';
 import {
     Box,
     Button,
@@ -22,69 +22,69 @@ import {
 } from '@mui/material';
 
 const ListingDetails = () => {
-    const { id } = useParams();
+    const {id} = useParams();
     const [listing, setListing] = useState(null);
-    const [applications, setApplications] = useState([]);
     const [error, setError] = useState(null);
+    const [applications, setApplications] = useState([]);
     const [loading, setLoading] = useState(true);
     const [selectedProof, setSelectedProof] = useState(null);
     const [proofDialogOpen, setProofDialogOpen] = useState(false);
     const navigate = useNavigate();
 
     useEffect(() => {
-        const fetchData = async () => {
+        const fetchListing = async () => {
+            const token = localStorage.getItem('token');
             try {
-                const [listingData, applicationsData] = await Promise.all([
-                    api.getListing(id),
-                    api.getListingApplications(id)
-                ]);
-                setListing(listingData.listing);
-                setApplications(applicationsData.applications || []);
+                const listing = await api.getListingById(id, token)
+                console.log(listing);
+                setListing(listing);
+                setApplications(listing.applications)
+                console.log(listing.applications);
             } catch (err) {
                 setError(err.message);
             } finally {
                 setLoading(false);
             }
         };
-        fetchData();
+
+        fetchListing();
     }, [id]);
 
-    const handleVerifyApplication = async (applicationId) => {
-        try {
-            setLoading(true);
-            const result = await api.verifyApplication(id, applicationId);
+    useEffect(() => {
 
-            // Update the application status in the local state
-            setApplications(apps => apps.map(app =>
-                app.id === applicationId ? { ...app, verificationResult: result.verified } : app
-            ));
-
-            // Show success/failure message
-            setError(result.verified ? null : 'Proof verification failed');
-        } catch (err) {
-            setError(err.message);
-        } finally {
-            setLoading(false);
+        if (applications.some(app => app.status === 'pending')) {
+            if (
+                listing?.incomeRequirement === undefined &&
+                listing?.creditScoreRequirement === undefined &&
+                applications
+            ) {
+                console.log('No proof requirements, skipping application status update');
+                setApplications(applications.map(app => {
+                    if (app.status === 'pending') {
+                        app.status = 'verified';
+                    }
+                    return app;
+                }));
+                }
         }
+    }, [listing, applications]);
+
+
+    const handleVerifyApplication = async (applicationId) => {
+        //ToDo
     };
 
-    const handleUpdateStatus = async (applicationId, newStatus) => {
-        try {
-            setLoading(true);
-            await api.updateApplicationStatus(id, applicationId, newStatus);
-
-            // Update the application status in the local state
-            setApplications(apps => apps.map(app =>
-                app.id === applicationId ? { ...app, status: newStatus } : app
-            ));
-        } catch (err) {
-            setError(err.message);
-        } finally {
-            setLoading(false);
-        }
+    const handleUpdateStatus = async (application, newStatus) => {
+        setApplications(applications =>
+            applications.map(app =>
+                app.id === application.id ? { ...app, status: newStatus } : app
+            )
+        );
+        // ToDo: Update application status in backend
     };
 
     const handleViewProof = (proof, type) => {
+        //ToDo
         setSelectedProof({
             type,
             data: proof
@@ -96,7 +96,8 @@ const ListingDetails = () => {
         if (!window.confirm("Are you sure you want to delete this listing?")) return;
 
         try {
-            await api.deleteListing(id);
+            const token = localStorage.getItem('token');
+            await api.deleteListing(id, token);
             navigate('/listings-overview');
         } catch (err) {
             setError(err.message);
@@ -105,19 +106,15 @@ const ListingDetails = () => {
 
     const getStatusChipColor = (status) => {
         switch (status) {
-            case 'approved': return 'success';
-            case 'rejected': return 'error';
-            default: return 'default';
+            case 'approved':
+                return 'success';
+            case 'rejected':
+                return 'error';
+            case 'verified':
+                return 'info';
+            default:
+                return 'default';
         }
-    };
-
-    // Function to determine which proofs are required for this listing
-    const getRequiredProofs = () => {
-        if (!listing?.proofRequirements || listing.proofRequirements.length === 0) {
-            // For listings without specific requirements, require both proofs
-            return ['income', 'creditScore'];
-        }
-        return listing.proofRequirements.map(req => req.type);
     };
 
     // Function to check if a proof meets the minimum requirements
@@ -162,20 +159,23 @@ const ListingDetails = () => {
 
     // Function to check if all required proofs are present and valid
     const canVerifyApplication = (application) => {
-        const requiredProofs = getRequiredProofs();
-
-        for (const proofType of requiredProofs) {
-            const proof = proofType === 'income' ? application.incomeProof : application.creditScoreProof;
-            if (!proof) return false; // Missing required proof
-            if (!checkProofMeetsRequirements(proofType, proof)) return false; // Proof doesn't meet requirements
-        }
-
         return true;
+
+        // if (listing.incomeRequirement !== undefined && listing.creditScoreRequirement === undefined) return false;
+        // if
+        //
+        // for (const proofType of requiredProofs) {
+        //     const proof = proofType === 'income' ? application.incomeProof : application.creditScoreProof;
+        //     if (!proof) return false; // Missing required proof
+        //     if (!checkProofMeetsRequirements(proofType, proof)) return false; // Proof doesn't meet requirements
+        // }
+        //
+        // return true;
     };
 
     if (loading) return (
         <Box display="flex" justifyContent="center" alignItems="center" minHeight="200px">
-            <CircularProgress />
+            <CircularProgress/>
         </Box>
     );
 
@@ -183,8 +183,8 @@ const ListingDetails = () => {
     if (!listing) return <Alert severity="info">Listing not found</Alert>;
 
     return (
-        <Box sx={{ p: 3, maxWidth: '800px', margin: '0 auto' }}>
-            <Paper sx={{ p: 3, mb: 3 }}>
+        <Box sx={{p: 3, maxWidth: '800px', margin: '0 auto'}}>
+            <Paper sx={{p: 3, mb: 3}}>
                 <Typography variant="h4" gutterBottom>{listing.name}</Typography>
                 <Typography variant="body1" paragraph><strong>Address:</strong> {listing.address}</Typography>
                 <Typography variant="body1" paragraph><strong>Size:</strong> {listing.size} m²</Typography>
@@ -197,7 +197,7 @@ const ListingDetails = () => {
 
                 {/* Proof Requirements */}
                 {listing.proofRequirements && listing.proofRequirements.length > 0 && (
-                    <Box sx={{ mt: 2 }}>
+                    <Box sx={{mt: 2}}>
                         <Typography variant="h6" gutterBottom>Proof Requirements</Typography>
                         {listing.proofRequirements.map((req, index) => (
                             <Typography key={index} variant="body1" paragraph>
@@ -211,7 +211,7 @@ const ListingDetails = () => {
                 )}
             </Paper>
 
-            <Paper sx={{ p: 3 }}>
+            <Paper sx={{p: 3}}>
                 <Typography variant="h5" gutterBottom>Applications ({applications.length})</Typography>
                 {applications.length === 0 ? (
                     <Alert severity="info">No applications yet</Alert>
@@ -219,11 +219,11 @@ const ListingDetails = () => {
                     <List>
                         {applications.map((application, index) => (
                             <React.Fragment key={application.id}>
-                                {index > 0 && <Divider />}
+                                {index > 0 && <Divider/>}
                                 <ListItem>
                                     <ListItemText
                                         primary={
-                                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                            <Box sx={{display: 'flex', alignItems: 'center', gap: 1}}>
                                                 <Typography variant="subtitle1">
                                                     Application #{application.id}
                                                 </Typography>
@@ -235,18 +235,19 @@ const ListingDetails = () => {
                                             </Box>
                                         }
                                         secondary={
-                                            <Box sx={{ mt: 1 }}>
+                                            <Box sx={{mt: 1}}>
                                                 <Stack spacing={1}>
                                                     <Typography variant="body2">
                                                         Submitted: {new Date(application.timestamp).toLocaleString()}
                                                     </Typography>
                                                     {application.verificationResult !== undefined && (
-                                                        <Typography variant="body2" color={application.verificationResult ? 'success.main' : 'error.main'}>
+                                                        <Typography variant="body2"
+                                                                    color={application.verificationResult ? 'success.main' : 'error.main'}>
                                                             Verification: {application.verificationResult ? 'Valid' : 'Invalid'}
                                                         </Typography>
                                                     )}
                                                     <Stack direction="row" spacing={1}>
-                                                        {getRequiredProofs().includes('income') && application.incomeProof && (
+                                                        {listing.incomeRequirement && application.incomeProof && (
                                                             <Button
                                                                 size="small"
                                                                 onClick={() => handleViewProof(application.incomeProof, 'Income')}
@@ -257,7 +258,7 @@ const ListingDetails = () => {
                                                                 {!checkProofMeetsRequirements('income', application.incomeProof) && ' ⚠️'}
                                                             </Button>
                                                         )}
-                                                        {getRequiredProofs().includes('creditScore') && application.creditScoreProof && (
+                                                        {listing.creditScoreRequirement && application.creditScoreProof && (
                                                             <Button
                                                                 size="small"
                                                                 onClick={() => handleViewProof(application.creditScoreProof, 'Credit Score')}
@@ -270,38 +271,44 @@ const ListingDetails = () => {
                                                         )}
                                                     </Stack>
                                                     {/* Show missing required proofs */}
-                                                    {getRequiredProofs().map(proofType => {
-                                                        const hasProof = proofType === 'income' ? application.incomeProof : application.creditScoreProof;
-                                                        if (!hasProof) {
-                                                            return (
-                                                                <Typography key={proofType} variant="body2" color="error.main">
-                                                                    Missing {proofType === 'income' ? 'Income' : 'Credit Score'} Proof ❌
-                                                                </Typography>
-                                                            );
-                                                        }
-                                                        return null;
-                                                    })}
+
+                                                    {/*{getRequiredProofs().map(proofType => {*/}
+                                                    {/*    const hasProof = proofType === 'income' ? application.incomeProof : application.creditScoreProof;*/}
+                                                    {/*    if (!hasProof) {*/}
+                                                    {/*        return (*/}
+                                                    {/*            <Typography key={proofType} variant="body2"*/}
+                                                    {/*                        color="error.main">*/}
+                                                    {/*                Missing {proofType === 'income' ? 'Income' : 'Credit Score'} Proof*/}
+                                                    {/*                ❌*/}
+                                                    {/*            </Typography>*/}
+                                                    {/*        );*/}
+                                                    {/*    }*/}
+                                                    {/*    return null;*/}
+                                                    {/*})}*/}
                                                     {/* Show insufficient proof values */}
-                                                    {getRequiredProofs().map(proofType => {
-                                                        const proof = proofType === 'income' ? application.incomeProof : application.creditScoreProof;
-                                                        if (proof && !checkProofMeetsRequirements(proofType, proof)) {
-                                                            const requirement = listing.proofRequirements.find(req => req.type === proofType);
-                                                            return (
-                                                                <Typography key={proofType} variant="body2" color="error.main">
-                                                                    {proofType === 'income' ? 'Income' : 'Credit Score'} Proof insufficient
-                                                                    (need {proofType === 'income' ? `€${requirement.minValue}` : requirement.minValue}) ⚠️
-                                                                </Typography>
-                                                            );
-                                                        }
-                                                        return null;
-                                                    })}
+                                                    {/*{getRequiredProofs().map(proofType => {*/}
+                                                    {/*    const proof = proofType === 'income' ? application.incomeProof : application.creditScoreProof;*/}
+                                                    {/*    if (proof && !checkProofMeetsRequirements(proofType, proof)) {*/}
+                                                    {/*        const requirement = listing.proofRequirements.find(req => req.type === proofType);*/}
+                                                    {/*        return (*/}
+                                                    {/*            <Typography key={proofType} variant="body2"*/}
+                                                    {/*                        color="error.main">*/}
+                                                    {/*                {proofType === 'income' ? 'Income' : 'Credit Score'} Proof*/}
+                                                    {/*                insufficient*/}
+                                                    {/*                (need {proofType === 'income' ? `€${requirement.minValue}` : requirement.minValue})*/}
+                                                    {/*                ⚠️*/}
+                                                    {/*            </Typography>*/}
+                                                    {/*        );*/}
+                                                    {/*    }*/}
+                                                    {/*    return null;*/}
+                                                    {/*})}*/}
                                                 </Stack>
                                             </Box>
                                         }
                                     />
                                     <ListItemSecondaryAction>
                                         <Stack spacing={1}>
-                                            {!application.verificationResult && application.status === 'pending' && (
+                                            {application.status === 'pending' && (
                                                 <>
                                                     {canVerifyApplication(application) ? (
                                                         <Button
@@ -313,16 +320,17 @@ const ListingDetails = () => {
                                                             Verify Proofs
                                                         </Button>
                                                     ) : (
-                                                        <Typography variant="body2" color="error.main" sx={{ fontSize: '0.75rem' }}>
+                                                        <Typography variant="body2" color="error.main"
+                                                                    sx={{fontSize: '0.75rem'}}>
                                                             Cannot verify - missing or insufficient proofs
                                                         </Typography>
                                                     )}
                                                 </>
                                             )}
-                                            {application.verificationResult && application.status === 'pending' && (
+                                            {application.status === 'verified' && (
                                                 <>
                                                     <Button
-                                                        onClick={() => handleUpdateStatus(application.id, 'approved')}
+                                                        onClick={() => handleUpdateStatus(application, 'approved')}
                                                         disabled={loading}
                                                         variant="contained"
                                                         color="success"
@@ -331,7 +339,7 @@ const ListingDetails = () => {
                                                         Approve
                                                     </Button>
                                                     <Button
-                                                        onClick={() => handleUpdateStatus(application.id, 'rejected')}
+                                                        onClick={() => handleUpdateStatus(application, 'rejected')}
                                                         disabled={loading}
                                                         variant="contained"
                                                         color="error"
@@ -350,7 +358,7 @@ const ListingDetails = () => {
                 )}
             </Paper>
 
-            <Box sx={{ mt: 3, display: 'flex', justifyContent: 'space-between' }}>
+            <Box sx={{mt: 3, display: 'flex', justifyContent: 'space-between'}}>
                 <Button
                     onClick={() => navigate('/listings-overview')}
                     variant="outlined"
@@ -376,7 +384,7 @@ const ListingDetails = () => {
                     {selectedProof?.type} Proof Details
                 </DialogTitle>
                 <DialogContent>
-                    <Box sx={{ mt: 2 }}>
+                    <Box sx={{mt: 2}}>
                         <pre style={{
                             whiteSpace: 'pre-wrap',
                             wordWrap: 'break-word',

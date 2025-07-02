@@ -58,28 +58,30 @@ const CreateListing = () => {
     const handleSubmit = async (e) => {
         e.preventDefault();
 
+        const token = localStorage.getItem('token');
+        if (!token) {
+            setError('You must be logged in to create a listing.');
+            return;
+        }
+
         try {
             // Convert proof requirements to the expected format
-            const requirements = [];
             if (proofRequirements.income.required) {
-                requirements.push({
-                    type: 'income',
-                    required: true,
-                    minValue: proofRequirements.income.minValue ? Number(proofRequirements.income.minValue) : undefined
-                });
+                if (!proofRequirements.income.minValue) {
+                    throw new Error('Please specify a minimum income value');
+                }
             }
             if (proofRequirements.creditScore.required) {
-                requirements.push({
-                    type: 'creditScore',
-                    required: true,
-                    minValue: proofRequirements.creditScore.minValue ? Number(proofRequirements.creditScore.minValue) : undefined
-                });
+                if (!proofRequirements.income.minValue) {
+                    throw new Error('Please specify a minimum credit score');
+                }
             }
 
-            const res = await fetch('http://localhost:3004/listings', {
+            const res = await fetch('/api/listings', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
+                    Authorization: `Bearer ${token}`,
                 },
                 body: JSON.stringify({
                     name: formData.name,
@@ -87,7 +89,8 @@ const CreateListing = () => {
                     size: Number(formData.size),
                     price: Number(formData.price),
                     type: formData.type,
-                    proofRequirements: requirements
+                    ...(proofRequirements.income.required && {incomeRequirement:proofRequirements.income.minValue}),
+                    ...(proofRequirements.creditScore.required && {creditScoreRequirement: proofRequirements.creditScore.minValue})
                 }),
             });
 

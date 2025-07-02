@@ -16,6 +16,20 @@ export const api = {
         return data;
     },
 
+    async getListingById(listingId, token) {
+        const res = await fetch(`${API_BASE_URL}/listings/${listingId}`, {
+            method: 'GET',
+            headers: {
+                Authorization: `Bearer ${token}`,
+            },
+        });
+        if (!res.ok) {
+            throw new Error('Failed to fetch listing');
+        }
+        const data = await res.json();
+        return data.listing;
+    },
+
     async createListing(listingData) {
         const response = await fetch(`${API_BASE_URL}/listings`, {
             method: 'POST',
@@ -73,11 +87,12 @@ export const api = {
         return response.json();
     },
 
-    async deleteListing(id) {
+    async deleteListing(id, token) {
         const response = await fetch(`${API_BASE_URL}/listings/${id}`, {
             method: 'DELETE',
             headers: {
                 'Content-Type': 'application/json',
+                Authorization: `Bearer ${token}`,
             }
         });
         if (!response.ok) {
