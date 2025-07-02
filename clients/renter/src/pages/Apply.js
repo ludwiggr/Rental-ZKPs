@@ -1,16 +1,16 @@
-import React, { useEffect, useState } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
-import { backend_api } from '../services/backend_api';
-import { Box, Button, Typography, CircularProgress, Alert } from '@mui/material';
+import React, {useEffect, useState} from 'react';
+import {useParams, useNavigate} from 'react-router-dom';
+import {backend_api} from '../services/backend_api';
+import {Box, Button, Typography, CircularProgress, Alert} from '@mui/material';
 
 function Apply() {
-    const { id } = useParams();
+    const {id} = useParams();
     const navigate = useNavigate();
     const [listing, setListing] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
-    const [proof, setProof] = useState({ income: '', credit: '' });
-    const [proofGenerated, setProofGenerated] = useState({ income: false, credit: false });
+    const [incomeProof, setIncomeProof] = useState(null);
+    const [creditProof, setCreditProof] = useState(null);
     const [applying, setApplying] = useState(false);
 
     useEffect(() => {
@@ -30,16 +30,20 @@ function Apply() {
 
     const handleGenerateProof = (type) => {
         // Hier Proof-Generierung einbinden (Dummy für Demo)
-        setProofGenerated((prev) => ({ ...prev, [type]: true }));
-        setProof((prev) => ({ ...prev, [type]: 'proof123' }));
+        const proof = {"proof": 'Very trustable proof'};
+        if (type === 'income') {
+            setIncomeProof(proof);
+        } else if (type === 'credit') {
+            setCreditProof(proof);
+        }
     };
 
     const handleApply = async () => {
         setApplying(true);
         const token = localStorage.getItem('token');
         const proofs = {};
-        if (needsIncomeProof) proofs.incomeProof = { proof: proof.income };
-        if (needsCreditProof) proofs.creditScoreProof = { proof: proof.credit };
+        if (needsIncomeProof) proofs.incomeProof = incomeProof;
+        if (needsCreditProof) proofs.creditScoreProof = creditProof;
         try {
             await backend_api.applyToListing(id, token, proofs);
             navigate('/listing-overview');
@@ -50,19 +54,23 @@ function Apply() {
         }
     };
 
-    if (loading) return <CircularProgress />;
+    if (loading) return <CircularProgress/>;
     if (error) return <Alert severity="error">{error}</Alert>;
     if (!listing) return null;
 
-    const needsIncomeProof = listing.incomeRequirement !== undefined && listing.incomeRequirement !== null;
-    const needsCreditProof = listing.creditScoreRequirement !== undefined && listing.creditScoreRequirement !== null;
+    const needsIncomeProof = listing.incomeRequirement !== undefined;
+    const needsCreditProof = listing.creditScoreRequirement !== undefined;
 
     return (
         <Box maxWidth={600} mx="auto" mt={4}>
-            <Typography variant="h4" gutterBottom sx={{ fontWeight: 600, mb: 3 }}>Bewerbung für: {listing.name}</Typography>
+            <Typography variant="h4" gutterBottom sx={{fontWeight: 600, mb: 3}}>Application
+                for: {listing.name}</Typography>
             <Box
                 component="form"
-                onSubmit={e => { e.preventDefault(); handleApply(); }}
+                onSubmit={e => {
+                    e.preventDefault();
+                    handleApply();
+                }}
                 sx={{
                     display: 'flex',
                     flexDirection: 'column',
@@ -74,29 +82,30 @@ function Apply() {
                 }}
             >
                 <Box>
-                    <Typography variant="subtitle1" sx={{ fontWeight: 500 }}>Adresse</Typography>
-                    <Typography sx={{ color: 'text.secondary' }}>{listing.address}</Typography>
+                    <Typography variant="subtitle1" sx={{fontWeight: 500}}>Adress</Typography>
+                    <Typography sx={{color: 'text.secondary'}}>{listing.address}</Typography>
                 </Box>
                 <Box>
-                    <Typography variant="subtitle1" sx={{ fontWeight: 500 }}>Größe</Typography>
-                    <Typography sx={{ color: 'text.secondary' }}>{listing.size}</Typography>
+                    <Typography variant="subtitle1" sx={{fontWeight: 500}}>Size</Typography>
+                    <Typography sx={{color: 'text.secondary'}}>{listing.size}</Typography>
                 </Box>
                 <Box>
-                    <Typography variant="subtitle1" sx={{ fontWeight: 500 }}>Preis</Typography>
-                    <Typography sx={{ color: 'text.secondary' }}>{listing.price} €</Typography>
+                    <Typography variant="subtitle1" sx={{fontWeight: 500}}>Price</Typography>
+                    <Typography sx={{color: 'text.secondary'}}>{listing.price} €</Typography>
                 </Box>
                 <Box>
-                    <Typography variant="subtitle1" sx={{ fontWeight: 500 }}>Typ</Typography>
-                    <Typography sx={{ color: 'text.secondary' }}>{listing.type}</Typography>
+                    <Typography variant="subtitle1" sx={{fontWeight: 500}}>Type</Typography>
+                    <Typography sx={{color: 'text.secondary'}}>{listing.type}</Typography>
                 </Box>
                 {needsIncomeProof && (
                     <Box>
-                        <Typography variant="subtitle1" sx={{ fontWeight: 500 }}>Einkommensnachweis</Typography>
-                        <Alert severity="info" sx={{ mb: 1 }}>
+                        <Typography variant="subtitle1" sx={{fontWeight: 500}}>Income Proof</Typography>
+                        <Alert severity="info" sx={{mb: 1}}>
                             Mindestens {listing.incomeRequirement} € erforderlich.
                         </Alert>
-                        {!proofGenerated.income ? (
-                            <Button variant="outlined" onClick={() => handleGenerateProof('income')}>Einkommensnachweis generieren</Button>
+                        {incomeProof == null ? (
+                            <Button variant="outlined" onClick={() => handleGenerateProof('income')}>Einkommensnachweis
+                                generieren</Button>
                         ) : (
                             <Alert severity="success">Einkommensnachweis generiert!</Alert>
                         )}
@@ -104,12 +113,13 @@ function Apply() {
                 )}
                 {needsCreditProof && (
                     <Box>
-                        <Typography variant="subtitle1" sx={{ fontWeight: 500 }}>Bonitätsnachweis</Typography>
-                        <Alert severity="info" sx={{ mb: 1 }}>
+                        <Typography variant="subtitle1" sx={{fontWeight: 500}}>Credit Score Proof</Typography>
+                        <Alert severity="info" sx={{mb: 1}}>
                             Mindestens {listing.creditScoreRequirement} erforderlich.
                         </Alert>
-                        {!proofGenerated.credit ? (
-                            <Button variant="outlined" onClick={() => handleGenerateProof('credit')}>Bonitätsnachweis generieren</Button>
+                        {creditProof == null ? (
+                            <Button variant="outlined" onClick={() => handleGenerateProof('credit')}>Bonitätsnachweis
+                                generieren</Button>
                         ) : (
                             <Alert severity="success">Bonitätsnachweis generiert!</Alert>
                         )}
@@ -121,8 +131,8 @@ function Apply() {
                         variant="contained"
                         color="primary"
                         size="large"
-                        sx={{ mt: 2, fontWeight: 600 }}
-                        disabled={applying || (needsIncomeProof && !proofGenerated.income) || (needsCreditProof && !proofGenerated.credit)}
+                        sx={{mt: 2, fontWeight: 600}}
+                        disabled={applying || (needsIncomeProof && incomeProof == null) || (needsCreditProof && creditProof == null)}
                     >
                         Jetzt bewerben
                     </Button>
