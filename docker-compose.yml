@@ -54,10 +54,6 @@ services:
       - NODE_ENV=development
     depends_on:
       - bank_database_service
-#    volumes:
-#      - ./servers/bank-backend_api:/app
-#      - /app/node_modules
-
   database_service:
     image: mongo:latest
     container_name: database-container
