@@ -6,7 +6,7 @@ const listingSchema = new mongoose.Schema({
     size: { type: String, required: true },
     createdAt: { type: Date, default: Date.now },
     createdBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
-    applicants: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
+    applications: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Application' }],
     price: { type: Number, required: true },
     type: {
         type: String,

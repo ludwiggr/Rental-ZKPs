@@ -1,7 +1,10 @@
 const express = require('express');
 const router = express.Router();
 const Listing = require('../models/Listing');
+const Application = require('../models/Application');
 const jwt = require('jsonwebtoken');
+
+
 
 const {JWT_SECRET, JWT_EXPIRES_IN} = require('../config/config');
 
@@ -73,14 +76,24 @@ router.post('/', async (req, res) => {
 
 // Get a specific Listing by ID
 router.get('/:id', async (req, res) => {
-
+    console.log("GET request received", req.params.id);
     try {
         check_authorization(req)
     } catch (err) {
         return res.status(401).json({message: 'Authorization failed'});
     }
     try {
-        const listing = await Listing.findById(req.params.id).populate('applicants', 'email username');
+
+        console.log("Test", req.params.id);
+
+        const listing = await Listing.findById(req.params.id)
+            .populate({
+                path: 'applications',
+                select: 'userId status incomeProof creditScoreProof'
+            });
+
+        console.log(listing);
+
         if (!listing) return res.status(404).json({ message: 'Listing not found' });
 
         res.json({ listing });
@@ -118,32 +131,36 @@ router.delete('/:id', async (req, res) => {
 
 // Apply to a Listing
 router.post('/:id/apply', async (req, res) => {
+    console.log("POST request received", req.body);
     let userId;
-
-    console.log("Application received");
-
     try {
         userId = check_authorization(req)
     } catch (err) {
         return res.status(401).json({message: 'Authorization failed'});
     }
-
-
-
     try {
         const listing = await Listing.findById(req.params.id);
         if (!listing) {
             return res.status(404).json({ message: 'Listing not found' });
         }
 
-
-        // Check if user already applied
-        if (listing.applicants.includes(userId)) {
+        // Prüfe, ob der User schon eine Bewerbung für dieses Listing hat
+        const existingApplication = await Application.findOne({ userId, _id: { $in: listing.applications } });
+        if (existingApplication) {
             return res.status(400).json({ message: 'User already applied to this listing' });
         }
 
-        // Add user to applicants
-        listing.applicants.push(userId);
+        // Erstelle neue Application
+        const { incomeProof, creditScoreProof } = req.body;
+        const application = new Application({
+            userId,
+            incomeProof: incomeProof || {},
+            creditScoreProof: creditScoreProof || {},
+        });
+        await application.save();
+
+        // Füge Application zum Listing hinzu
+        listing.applications.push(application._id);
         await listing.save();
 
         res.status(200).json({ message: 'Successfully applied to the listing' });
@@ -152,7 +169,6 @@ router.post('/:id/apply', async (req, res) => {
         res.status(500).json({ message: 'Server error' });
     }
 });
-
 
 function check_authorization(req) {
     const authHeader = req.headers.authorization;
@@ -164,7 +180,5 @@ function check_authorization(req) {
     const decoded = jwt.verify(token, JWT_SECRET);
     return decoded.userId;
 }
-
-
 
 module.exports = router;

@@ -7,7 +7,6 @@ const { JWT_SECRET, JWT_EXPIRES_IN } = require('../config/config');
 
 router.post('/', async (req, res) => {
     console.log("Login request");
-    console.log(req.body); //ToDo delete
     const { email, password } = req.body;
 
     console.log(email); //ToDo delete
@@ -27,7 +26,7 @@ router.post('/', async (req, res) => {
     // Generate JWT token
     const token = jwt.sign({ userId: user._id }, JWT_SECRET, { expiresIn: JWT_EXPIRES_IN });
 
-    res.json({ message: 'Login successful', token, username: user.username });
+    res.json({ message: 'Login successful', token, username: user.username, userId: user._id});
 });
 
 module.exports = router;

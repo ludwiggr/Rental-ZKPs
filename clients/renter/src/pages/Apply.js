@@ -1,6 +1,7 @@
 import React, {useEffect, useState} from 'react';
 import {useParams, useNavigate} from 'react-router-dom';
 import {backend_api} from '../services/backend_api';
+import {bank_api} from '../services/bank_api';
 import {Box, Button, Typography, CircularProgress, Alert} from '@mui/material';
 
 function Apply() {
@@ -28,12 +29,28 @@ function Apply() {
         fetchListing();
     }, [id]);
 
-    const handleGenerateProof = (type) => {
+    const handleGenerateProof = async (type) => {
         // Hier Proof-Generierung einbinden (Dummy für Demo)
-        const proof = {"proof": 'Very trustable proof'};
+        let proof = null;
+        try {
+            const userId = localStorage.getItem('userId');
+
+            let targetValue;
+            if (type === 'income') {
+                targetValue = listing.incomeRequirement;
+            } else if (type === 'creditScore') {
+                targetValue = listing.creditScoreRequirement;
+            } else {
+                throw new Error("Invalid proof type");
+            }
+            proof = await bank_api.generateProof(userId, type, targetValue)
+        } catch (err) {
+            setError("Proof could not be generated.");
+            const proof = null;
+        }
         if (type === 'income') {
             setIncomeProof(proof);
-        } else if (type === 'credit') {
+        } else if (type === 'creditScore') {
             setCreditProof(proof);
         }
     };
@@ -44,9 +61,13 @@ function Apply() {
         const proofs = {};
         if (needsIncomeProof) proofs.incomeProof = incomeProof;
         if (needsCreditProof) proofs.creditScoreProof = creditProof;
+
+        console.log(proofs);
+        console.log(needsCreditProof);
+        console.log(incomeProof);
         try {
             await backend_api.applyToListing(id, token, proofs);
-            navigate('/listing-overview');
+            navigate('/listings-overview');
         } catch (err) {
             setError(err.message);
         } finally {
@@ -104,10 +125,10 @@ function Apply() {
                             Mindestens {listing.incomeRequirement} € erforderlich.
                         </Alert>
                         {incomeProof == null ? (
-                            <Button variant="outlined" onClick={() => handleGenerateProof('income')}>Einkommensnachweis
-                                generieren</Button>
+                            <Button variant="outlined" onClick={() => handleGenerateProof('income')}>Generate Proof!
+                                </Button>
                         ) : (
-                            <Alert severity="success">Einkommensnachweis generiert!</Alert>
+                            <Alert severity="success">Proof generated!</Alert>
                         )}
                     </Box>
                 )}
@@ -118,10 +139,10 @@ function Apply() {
                             Mindestens {listing.creditScoreRequirement} erforderlich.
                         </Alert>
                         {creditProof == null ? (
-                            <Button variant="outlined" onClick={() => handleGenerateProof('credit')}>Bonitätsnachweis
-                                generieren</Button>
+                            <Button variant="outlined" onClick={() => handleGenerateProof('creditScore')}>Generate Proof!
+                            </Button>
                         ) : (
-                            <Alert severity="success">Bonitätsnachweis generiert!</Alert>
+                            <Alert severity="success">Proof generated!</Alert>
                         )}
                     </Box>
                 )}

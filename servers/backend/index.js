@@ -25,6 +25,8 @@ app.use('/api/register', require('./routes/register'));
 
 app.use('/api/login', require('./routes/login'));
 
+app
+
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
     console.log(`Backend server running on port ${PORT}`);

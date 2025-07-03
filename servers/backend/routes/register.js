@@ -19,6 +19,26 @@ router.post('/', async (req, res) => {
         const hashedPassword = await bcrypt.hash(password, 10);
 
         const user = new User({ username, email, password: hashedPassword });
+
+        // Create User in Bank System for PoC Developement only via Bank API Service
+        try {
+            const bank_res = await fetch(`http://bank_api_service:3000/user`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({id: user._id}),
+            });
+            if (!bank_res.ok) {
+                const err = await bank_res.json();
+                console.log("Error creating user in bank system:", err);
+                throw new Error(err.message || 'Failed to create user in bank system, aborting registration');
+            }
+            console.log("User created in bank system successfully");
+        } catch (bank_err) {
+            console.log("Error during bank API call:", bank_err);
+            return res.status(500).json({ error: 'Failed to create user in bank system, aborting registration' });
+        }
         await user.save();
     } catch (err) {
         console.log(err);

@@ -4,6 +4,7 @@ function NavBar() {
     const handleLogout = () => {
         // Remove token from local storage
         localStorage.removeItem('token');
+        localStorage.removeItem('userId');
 
         // Redirect to login page or refresh
         window.location.href = `http://login.localhost/login`;
