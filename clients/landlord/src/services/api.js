@@ -44,30 +44,21 @@ export const api = {
         return response.json();
     },
 
-    async getListing(id) {
-        const response = await fetch(`${API_BASE_URL}/listings/${id}`);
-        if (!response.ok) {
-            throw new Error('Failed to fetch listing');
-        }
-        return response.json();
-    },
+    async verifyApplication(applicationId, listingId, token) {
+        console.log(applicationId);
+        console.log(listingId);
 
-    async getListingApplications(listingId) {
-        const response = await fetch(`${API_BASE_URL}/listings/${listingId}/applications`);
-        if (!response.ok) {
-            throw new Error('Failed to fetch listing applications');
-        }
-        return response.json();
-    },
-
-    async verifyApplication(listingId, applicationId) {
-        const response = await fetch(`${API_BASE_URL}/listings/${listingId}/applications/${applicationId}/verify`, {
+        const response = await fetch(`${API_BASE_URL}/applications/verify`, {
             method: 'POST',
             headers: {
+                Authorization: `Bearer ${token}`,
                 'Content-Type': 'application/json',
-            }
+            },
+            body: JSON.stringify({applicationId, listingId})
         });
         if (!response.ok) {
+            console.log('Failed to verify application');
+            console.log(response);
             throw new Error('Failed to verify application');
         }
         return response.json();

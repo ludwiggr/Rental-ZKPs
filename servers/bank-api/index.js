@@ -18,7 +18,7 @@ mongoose.connect('mongodb://root:example@bank_database_service:27017/db?authSour
     .then(() => console.log('MongoDB connected'))
     .catch(err => console.error(err));
 // Routes
-app.use('/proofs', require('./routes/proof'));
+app.use('/bank/proofs', require('./routes/proof'));
 app.use('/user', require('./routes/user'));
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {

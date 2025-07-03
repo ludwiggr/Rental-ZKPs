@@ -48,8 +48,8 @@ services:
       context: .
       dockerfile: servers/bank-api/Dockerfile
     container_name: bank-api-container
-    ports:
-      - "3000:3000"
+    expose:
+      - "3000"
     environment:
       - NODE_ENV=development
     depends_on:

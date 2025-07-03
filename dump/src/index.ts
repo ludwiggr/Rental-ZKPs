@@ -18,7 +18,7 @@ const TEMP_DIR = path.join(process.cwd(), 'temp');
 dotenv.config();
 
 const app = express();
-const port = process.env.PORT || 3002;
+const port = process.env.PORT || 3000;
 
 app.use(cors({
   origin: [

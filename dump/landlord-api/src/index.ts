@@ -269,8 +269,8 @@ app.post('/listings/:listingId/applications/:applicationId/verify', async (req, 
     await fs.mkdir(workDir, { recursive: true });
 
     // Get paths to issuer public keys
-    const employerIssuerPkPath = path.join(process.cwd(), '..', 'employer-api', 'temp', 'employer_issuer_pk.json');
-    const bankIssuerPkPath = path.join(process.cwd(), '..', 'bank-api', 'temp', 'bank_issuer_pk.json');
+    const employerIssuerPkPath = path.join(process.cwd(), '..', 'employer-backend_api', 'temp', 'employer_issuer_pk.json');
+    const bankIssuerPkPath = path.join(process.cwd(), '..', 'bank-backend_api', 'temp', 'bank_issuer_pk.json');
     const heimdallPath = path.join(process.cwd(), '..', '..', 'heimdall', 'heimdalljs', 'cli');
 
     // Check if issuer public keys exist

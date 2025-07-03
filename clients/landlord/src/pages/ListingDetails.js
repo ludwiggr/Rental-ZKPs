@@ -65,26 +65,52 @@ const ListingDetails = () => {
                     }
                     return app;
                 }));
-                }
+            }
         }
     }, [listing, applications]);
 
 
     const handleVerifyApplication = async (applicationId) => {
-        //ToDo
+        setLoading(true);
+
+        try {
+            const token = localStorage.getItem('token');
+            const response = await api.verifyApplication(applicationId, listing._id, token);
+            console.log(response);
+
+            const verified = response.verified;
+
+            if (response.verified) {
+                setApplications(applications =>
+                    applications.map(app =>
+                        app._id === applicationId ? {
+                            ...app,
+                            status: 'verified',
+                            verificationResult: response.verified
+                        } : app
+                    )
+                );
+            } else {
+                setError('Verification failed');
+            }
+        } catch (error) {
+            console.error('Verification error:', error);
+            setError(error.message);
+        } finally {
+            setLoading(false);
+        }
     };
 
     const handleUpdateStatus = async (application, newStatus) => {
         setApplications(applications =>
             applications.map(app =>
-                app.id === application.id ? { ...app, status: newStatus } : app
+                app.id === application.id ? {...app, status: newStatus} : app
             )
         );
         // ToDo: Update application status in backend
     };
 
     const handleViewProof = (proof, type) => {
-        //ToDo
         setSelectedProof({
             type,
             data: proof
@@ -312,7 +338,7 @@ const ListingDetails = () => {
                                                 <>
                                                     {canVerifyApplication(application) ? (
                                                         <Button
-                                                            onClick={() => handleVerifyApplication(application.id)}
+                                                            onClick={() => handleVerifyApplication(application._id)}
                                                             disabled={loading}
                                                             variant="outlined"
                                                             size="small"

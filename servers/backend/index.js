@@ -25,7 +25,7 @@ app.use('/api/register', require('./routes/register'));
 
 app.use('/api/login', require('./routes/login'));
 
-app
+app.use('/api/applications', require('./routes/applications'));
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {

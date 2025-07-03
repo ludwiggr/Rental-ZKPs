@@ -6,13 +6,19 @@ LABEL authors="sikoby"
 WORKDIR /app
 
 # Copy package.json and package-lock.json (if present)
-COPY package*.json ./
+COPY servers/backend/package*.json ./
 
 # Install dependencies
 RUN npm install
 
 # Copy the rest of the backend source code
-COPY . .
+COPY servers/backend .
+
+# Heimdall-CLI ins Image kopieren
+COPY heimdall ./heimdall
+
+# Skript ausführbar machen und ausführen
+RUN chmod +x ./heimdall/install-heimdall.sh && cd heimdall && ./install-heimdall.sh
 
 # Expose port 3000 (or whatever port your app listens on)
 EXPOSE 3000

@@ -1,75 +1,64 @@
-"use strict";
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
-Object.defineProperty(exports, "__esModule", { value: true });
-const express_1 = __importDefault(require("express"));
-const cors_1 = __importDefault(require("cors"));
-const child_process_1 = require("child_process");
-const util_1 = require("util");
-const path_1 = __importDefault(require("path"));
-const promises_1 = __importDefault(require("fs/promises"));
-
-const execAsync = (0, util_1.promisify)(child_process_1.exec);
-const app = (0, express_1.default)();
+import express from 'express';
+import cors from 'cors';
+import { exec } from 'child_process.js';
+import { promisify } from 'util.js';
+import path from 'path.js';
+import fs from 'fs/promises';
+import { fileURLToPath } from 'url.js';
+const execAsync = promisify(exec);
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+const app = express();
 const port = process.env.PORT || 3004;
-
-// Configure middleware
-app.use((0, cors_1.default)());
-app.use(express_1.default.json());
-
+// Configure CORS - more permissive during development
+app.use(cors());
+app.use(express.json());
 // Store received proofs and listings
 const receivedProofs = [];
-let listings = [];
-const DATA_FILE = path_1.default.join(process.cwd(), 'data', 'listings.json');
-
-// Load data from file
-async function loadData() {
-    try {
-        const data = await promises_1.default.readFile(DATA_FILE, 'utf-8');
-        listings = JSON.parse(data);
-        console.log('Loaded listings data:', listings);
-    }
-    catch (error) {
-        console.log('No existing data found, starting with empty listings');
-        listings = [
+const listings = [
+    {
+        id: '1',
+        name: 'Modern City Apartment',
+        address: '123 Urban Street, City Center',
+        size: 75,
+        price: 1200,
+        type: 'apartment',
+        applications: [],
+        proofRequirements: [
             {
-                id: '1',
-                name: 'Modern City Apartment',
-                address: '123 Urban Street, City Center',
-                size: 75,
-                price: 1200,
-                type: 'apartment',
-                applications: []
+                type: 'income',
+                required: true,
+                minValue: 3000
             },
             {
-                id: '2',
-                name: 'Cozy Suburban House',
-                address: '456 Quiet Lane, Suburbs',
-                size: 120,
-                price: 1800,
-                type: 'house',
-                applications: []
+                type: 'creditScore',
+                required: true,
+                minValue: 650
             }
-        ];
-        await saveData();
+        ]
+    },
+    {
+        id: '2',
+        name: 'Cozy Suburban House',
+        address: '456 Quiet Lane, Suburbs',
+        size: 120,
+        price: 1800,
+        type: 'house',
+        applications: [],
+        proofRequirements: [
+            {
+                type: 'income',
+                required: true,
+                minValue: 4500
+            },
+            {
+                type: 'creditScore',
+                required: true,
+                minValue: 700
+            }
+        ]
     }
-}
-
-// Save data to file
-async function saveData() {
-    try {
-        await promises_1.default.writeFile(DATA_FILE, JSON.stringify(listings, null, 2));
-        console.log('Saved listings data');
-    }
-    catch (error) {
-        console.error('Error saving data:', error);
-    }
-}
-
-// Initialize data
-loadData();
-
+];
 // Get all listings
 app.get('/listings', (req, res) => {
     res.json({
@@ -77,7 +66,6 @@ app.get('/listings', (req, res) => {
         listings
     });
 });
-
 // Get a specific listing
 app.get('/listings/:id', (req, res) => {
     const listing = listings.find(l => l.id === req.params.id);
@@ -92,7 +80,6 @@ app.get('/listings/:id', (req, res) => {
         listing
     });
 });
-
 // Get applications for a specific listing
 app.get('/listings/:id/applications', (req, res) => {
     const listing = listings.find(l => l.id === req.params.id);
@@ -107,7 +94,27 @@ app.get('/listings/:id/applications', (req, res) => {
         applications: listing.applications
     });
 });
-
+// Get a specific application by ID
+app.get('/listings/:listingId/applications/:applicationId', (req, res) => {
+    const listing = listings.find(l => l.id === req.params.listingId);
+    if (!listing) {
+        return res.status(404).json({
+            success: false,
+            error: 'Listing not found'
+        });
+    }
+    const application = listing.applications.find(a => a.id === req.params.applicationId);
+    if (!application) {
+        return res.status(404).json({
+            success: false,
+            error: 'Application not found'
+        });
+    }
+    res.json({
+        success: true,
+        application
+    });
+});
 // Submit application for a listing
 app.post('/listings/:id/apply', async (req, res) => {
     try {
@@ -119,11 +126,39 @@ app.post('/listings/:id/apply', async (req, res) => {
             });
         }
         const { incomeProof, creditScoreProof } = req.body;
-        if (!incomeProof || !creditScoreProof) {
+        // Validate required proofs based on listing requirements
+        const incomeRequirement = listing.proofRequirements.find(req => req.type === 'income');
+        const creditRequirement = listing.proofRequirements.find(req => req.type === 'creditScore');
+        if (incomeRequirement?.required && !incomeProof) {
             return res.status(400).json({
                 success: false,
-                error: 'Both income and credit score proofs are required'
+                error: 'Income proof is required for this listing'
             });
+        }
+        if (creditRequirement?.required && !creditScoreProof) {
+            return res.status(400).json({
+                success: false,
+                error: 'Credit score proof is required for this listing'
+            });
+        }
+        // Validate proof values against requirements
+        if (incomeRequirement?.required && incomeProof) {
+            const incomeValue = incomeProof.publicSignals?.income || incomeProof.publicSignals?.[0];
+            if (incomeRequirement.minValue && Number(incomeValue) < incomeRequirement.minValue) {
+                return res.status(400).json({
+                    success: false,
+                    error: `Income must be at least €${incomeRequirement.minValue}`
+                });
+            }
+        }
+        if (creditRequirement?.required && creditScoreProof) {
+            const creditValue = creditScoreProof.publicSignals?.creditScore || creditScoreProof.publicSignals?.[0];
+            if (creditRequirement.minValue && Number(creditValue) < creditRequirement.minValue) {
+                return res.status(400).json({
+                    success: false,
+                    error: `Credit score must be at least ${creditRequirement.minValue}`
+                });
+            }
         }
         const application = {
             id: `${listing.id}-${listing.applications.length + 1}`,
@@ -134,7 +169,6 @@ app.post('/listings/:id/apply', async (req, res) => {
             verificationResult: undefined
         };
         listing.applications.push(application);
-        await saveData();
         res.status(201).json({
             success: true,
             application
@@ -148,7 +182,6 @@ app.post('/listings/:id/apply', async (req, res) => {
         });
     }
 });
-
 // Verify application proofs
 app.post('/listings/:listingId/applications/:applicationId/verify', async (req, res) => {
     try {
@@ -167,15 +200,16 @@ app.post('/listings/:listingId/applications/:applicationId/verify', async (req, 
             });
         }
         // Create working directory for verification
-        const workDir = path_1.default.join(process.cwd(), 'temp');
-        await promises_1.default.mkdir(workDir, { recursive: true });
+        const workDir = path.join(process.cwd(), 'temp');
+        await fs.mkdir(workDir, { recursive: true });
         // Get paths to issuer public keys
-        const employerIssuerPkPath = path_1.default.join(process.cwd(), '..', 'employer-api', 'temp', 'employer_issuer_pk.json');
-        const bankIssuerPkPath = path_1.default.join(process.cwd(), '..', 'bank-api', 'temp', 'bank_issuer_pk.json');
+        const employerIssuerPkPath = path.join(process.cwd(), '..', 'employer-api', 'temp', 'employer_issuer_pk.json');
+        const bankIssuerPkPath = path.join(process.cwd(), '..', 'bank-api', 'temp', 'bank_issuer_pk.json');
+        const heimdallPath = path.join(process.cwd(), '..', '..', 'heimdall', 'heimdalljs', 'cli');
         // Check if issuer public keys exist
         try {
-            await promises_1.default.access(employerIssuerPkPath);
-            await promises_1.default.access(bankIssuerPkPath);
+            await fs.access(employerIssuerPkPath);
+            await fs.access(bankIssuerPkPath);
         }
         catch (error) {
             console.error('Error accessing issuer public keys:', error);
@@ -186,10 +220,10 @@ app.post('/listings/:listingId/applications/:applicationId/verify', async (req, 
         }
         // Copy issuer public keys to working directory
         try {
-            const employerIssuerPk = await promises_1.default.readFile(employerIssuerPkPath, 'utf-8');
-            const bankIssuerPk = await promises_1.default.readFile(bankIssuerPkPath, 'utf-8');
-            await promises_1.default.writeFile(path_1.default.join(workDir, 'employer_issuer_pk.json'), employerIssuerPk);
-            await promises_1.default.writeFile(path_1.default.join(workDir, 'bank_issuer_pk.json'), bankIssuerPk);
+            const employerIssuerPk = await fs.readFile(employerIssuerPkPath, 'utf-8');
+            const bankIssuerPk = await fs.readFile(bankIssuerPkPath, 'utf-8');
+            await fs.writeFile(path.join(workDir, 'employer_issuer_pk.json'), employerIssuerPk);
+            await fs.writeFile(path.join(workDir, 'bank_issuer_pk.json'), bankIssuerPk);
         }
         catch (error) {
             console.error('Error copying issuer public keys:', error);
@@ -201,9 +235,9 @@ app.post('/listings/:listingId/applications/:applicationId/verify', async (req, 
         // Verify income proof
         let incomeResult;
         try {
-            const incomeProofPath = path_1.default.join(workDir, 'income_proof.json');
-            await promises_1.default.writeFile(incomeProofPath, JSON.stringify(application.incomeProof));
-            incomeResult = await execAsync(`heimdalljs pres attribute verify --presentation ${incomeProofPath} --issuerPK employer_issuer_pk.json`, {
+            const incomeProofPath = path.join(workDir, 'income_proof.json');
+            await fs.writeFile(incomeProofPath, JSON.stringify(application.incomeProof));
+            incomeResult = await execAsync(`node ${path.join(heimdallPath, 'heimdalljs-verify.js')} ${incomeProofPath}`, {
                 cwd: workDir
             });
             console.log('Income proof verification result:', incomeResult.stdout);
@@ -218,9 +252,9 @@ app.post('/listings/:listingId/applications/:applicationId/verify', async (req, 
         // Verify credit score proof
         let creditResult;
         try {
-            const creditProofPath = path_1.default.join(workDir, 'credit_proof.json');
-            await promises_1.default.writeFile(creditProofPath, JSON.stringify(application.creditScoreProof));
-            creditResult = await execAsync(`heimdalljs pres attribute verify --presentation ${creditProofPath} --issuerPK bank_issuer_pk.json`, {
+            const creditProofPath = path.join(workDir, 'credit_proof.json');
+            await fs.writeFile(creditProofPath, JSON.stringify(application.creditScoreProof));
+            creditResult = await execAsync(`node ${path.join(heimdallPath, 'heimdalljs-verify.js')} ${creditProofPath}`, {
                 cwd: workDir
             });
             console.log('Credit score proof verification result:', creditResult.stdout);
@@ -232,16 +266,15 @@ app.post('/listings/:listingId/applications/:applicationId/verify', async (req, 
                 error: 'Failed to verify credit score proof'
             });
         }
-        const verificationResult = incomeResult.stdout.includes('Verification successful') &&
-            creditResult.stdout.includes('Verification successful');
+        const verificationResult = incomeResult.stdout.includes('true') &&
+            creditResult.stdout.includes('true');
         application.verificationResult = verificationResult;
-        await saveData(); // Save the verification result
         res.json({
             success: true,
             verified: verificationResult,
             details: {
-                incomeVerification: incomeResult.stdout.includes('Verification successful'),
-                creditVerification: creditResult.stdout.includes('Verification successful')
+                incomeVerification: incomeResult.stdout.includes('true'),
+                creditVerification: creditResult.stdout.includes('true')
             }
         });
     }
@@ -253,7 +286,6 @@ app.post('/listings/:listingId/applications/:applicationId/verify', async (req, 
         });
     }
 });
-
 // Update application status
 app.patch('/listings/:listingId/applications/:applicationId', (req, res) => {
     const listing = listings.find(l => l.id === req.params.listingId);
@@ -278,13 +310,11 @@ app.patch('/listings/:listingId/applications/:applicationId', (req, res) => {
         });
     }
     application.status = status;
-    saveData();
     res.json({
         success: true,
         application
     });
 });
-
 // Delete a listing
 app.delete('/listings/:id', (req, res) => {
     const listingIndex = listings.findIndex(l => l.id === req.params.id);
@@ -295,13 +325,11 @@ app.delete('/listings/:id', (req, res) => {
         });
     }
     listings.splice(listingIndex, 1);
-    saveData();
     res.json({
         success: true,
         message: 'Listing deleted successfully'
     });
 });
-
 // Receive proof from renter
 app.post('/receive-proof', async (req, res) => {
     try {
@@ -332,7 +360,6 @@ app.post('/receive-proof', async (req, res) => {
         });
     }
 });
-
 // Get all received proofs
 app.get('/proofs', (req, res) => {
     res.json({
@@ -340,7 +367,6 @@ app.get('/proofs', (req, res) => {
         proofs: receivedProofs
     });
 });
-
 // Verify a specific proof
 app.post('/verify-proof/:index', async (req, res) => {
     try {
@@ -351,16 +377,16 @@ app.post('/verify-proof/:index', async (req, res) => {
                 error: 'Invalid proof index'
             });
         }
+        const workDir = path.join(process.cwd(), 'temp');
+        await fs.mkdir(workDir, { recursive: true });
+        const heimdallPath = path.join(process.cwd(), '..', '..', 'heimdall', 'heimdalljs', 'cli');
         const proof = receivedProofs[index].proof;
         console.log('Verifying proof:', proof);
-        // Create working directory for verification
-        const workDir = path_1.default.join(process.cwd(), 'temp');
-        await promises_1.default.mkdir(workDir, { recursive: true });
         // Save proof to file
-        const proofPath = path_1.default.join(workDir, 'proof_to_verify.json');
-        await promises_1.default.writeFile(proofPath, JSON.stringify(proof));
+        const proofPath = path.join(workDir, 'proof_to_verify.json');
+        await fs.writeFile(proofPath, JSON.stringify(proof));
         // Verify the proof
-        const result = await execAsync('heimdalljs pres verify proof_to_verify.json', {
+        const result = await execAsync(`node ${path.join(heimdallPath, 'heimdalljs-verify.js')} ${proofPath}`, {
             cwd: workDir
         });
         const verificationResult = result.stdout.includes('Verification successful');
@@ -378,19 +404,40 @@ app.post('/verify-proof/:index', async (req, res) => {
         });
     }
 });
-
-// Health check endpoint
-app.get('/health', (req, res) => {
-    res.json({ status: 'ok' });
+// Create a new listing
+app.post('/listings', (req, res) => {
+    try {
+        const { name, address, size, price, type, proofRequirements } = req.body;
+        if (!name || !address || !size || !price || !type) {
+            return res.status(400).json({
+                success: false,
+                error: 'Missing required fields: name, address, size, price, type'
+            });
+        }
+        const newListing = {
+            id: `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+            name,
+            address,
+            size: Number(size),
+            price: Number(price),
+            type,
+            applications: [],
+            proofRequirements: proofRequirements || []
+        };
+        listings.push(newListing);
+        res.status(201).json({
+            success: true,
+            listing: newListing
+        });
+    }
+    catch (error) {
+        console.error('Error creating listing:', error);
+        res.status(500).json({
+            success: false,
+            error: error instanceof Error ? error.message : 'Failed to create listing'
+        });
+    }
 });
-
-// Get current port
-app.get('/port', (req, res) => {
-    // The port will be set in the app.listen callback
-    res.json({ port: app.get('port') });
-});
-
-// Start the server
 app.listen(port, () => {
     console.log(`Landlord API server running at http://localhost:${port}`);
 });

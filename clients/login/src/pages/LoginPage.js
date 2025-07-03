@@ -24,13 +24,11 @@ function Login() {
                 return;
             }
 
-            //localStorage.setItem('token', data.token); // Save token
-
             setMessage('Login successful!');
             if (role === 'landlord') {
                 window.location.href = `http://landlord.localhost/landing?token=${encodeURIComponent(data.token)}`;
             } else if (role === 'tenant') {
-                window.location.href = `http://tenant.localhost/landing?token=${encodeURIComponent(data.token)}`;
+                window.location.href = `http://tenant.localhost/landing?token=${encodeURIComponent(data.token)}&userId=${encodeURIComponent(data.userId)}`;
             }
 
 

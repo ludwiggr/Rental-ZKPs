@@ -20,6 +20,13 @@ if [ -f heimdalljs/cli/package.json ]; then
   cd ../..
 fi
 
+# In heimdalljs/cli installieren
+if [ -f heimdalljs/heimdall/package.json]; then
+  cd heimdalljs/heimdall
+  npm ci
+  cd ../..
+fi
+
 # In circom/circomlib installieren
 if [ -f circom/circomlib/package.json ]; then
   cd circom/circomlib
