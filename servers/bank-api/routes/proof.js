@@ -123,7 +123,6 @@ router.post('/generateProof', async (req, res) => {
         }
     } catch (error) {
         console.error("Error in /generateProof:", error);
-        console.error("Request body:", req.body);
         res.status(500).json({
             success: false,
             error: error.message || 'Failed to generate credit score proof'

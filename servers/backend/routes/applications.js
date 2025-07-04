@@ -35,36 +35,28 @@ router.post("/verify", async (req, res) => {
         if (!application) {
             return res.status(404).json({error: 'Application not found'});
         }
-        console.log(application);
 
         const listing = await Listing.findById(listingId);
         if (!listing) {
             return res.status(404).json({error: 'Listing not found'});
         }
-        console.log(listing);
 
         let verificationResult = true;
         if (listing.incomeRequirement !== undefined && application.incomeProof!== undefined ) {
             const incomeProof = application.incomeProof;
-            console.log(incomeProof);
             if (!incomeProof || !incomeProof.proof) {
                 return res.status(400).json({error: 'Income proof is missing'});
             }
             proof = incomeProof.proof;
-            console.log('Proof to verify:', proof);
             verificationResult = await verifyProof(proof);
-            console.log(verificationResult);
         }
         if (listing.creditScoreRequirement !== undefined  && application.creditScoreProof !== undefined ) {
             const creditScoreProof = application.creditScoreProof;
-            console.log(creditScoreProof);
             if (!creditScoreProof || !creditScoreProof.proof) {
                 return res.status(400).json({error: 'Credit score proof is missing'});
             }
             proof = creditScoreProof.proof;
-            console.log('Proof to verify:', proof);
             verificationResult = await verifyProof(proof);
-            console.log(verificationResult);
         }
 
         res.json({
@@ -73,7 +65,6 @@ router.post("/verify", async (req, res) => {
         });
 
     } catch (err) {
-        console.log(err)
         res.status(500).json({ message: `Server error: ${err.message}`});
     }
 
@@ -85,7 +76,6 @@ async function verifyProof(proof) {
     await fs.mkdir(workDir, {recursive: true});
 
     const heimdallPath = path.join(process.cwd(), '..', '..', 'heimdall', 'heimdalljs', 'cli');
-    console.log('Verifying proof:', proof);
 
     // Save proof to file
     const proofPath = path.join(workDir, 'proof_to_verify.json');
@@ -97,7 +87,6 @@ async function verifyProof(proof) {
     });
 
     const verificationResult = result.stdout.includes('Verification successful');
-    console.log(verificationResult);
     return verificationResult;
 }
 

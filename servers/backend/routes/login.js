@@ -6,10 +6,8 @@ const jwt = require('jsonwebtoken');
 const { JWT_SECRET, JWT_EXPIRES_IN } = require('../config/config');
 
 router.post('/', async (req, res) => {
-    console.log("Login request");
+    console.log("POST request received, login requested");
     const { email, password } = req.body;
-
-    console.log(email); //ToDo delete
 
     // Check if user exists
     const user = await User.findOne({ email });

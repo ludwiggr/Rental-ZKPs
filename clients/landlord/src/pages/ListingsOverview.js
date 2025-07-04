@@ -34,9 +34,7 @@ function ListingsOverview() {
             try {
                 const data = await api.getListings(token);
                 setListings(data.listings);
-                console.log(data);
             } catch (err) {
-                console.error(err);
                 setError(error)
             } finally {
                 setLoading(false);

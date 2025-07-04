@@ -2,7 +2,6 @@ const API_BASE_URL = '/api';
 
 export const backend_api = {
     async getListings(token) {
-        console.log(token);
         const res = await fetch(`${API_BASE_URL}/listings?mine=false`, {
             method: 'GET',
             headers: {
@@ -13,7 +12,6 @@ export const backend_api = {
         if (!res.ok) {
             throw new Error('Failed to fetch listings');
         }
-        console.log(res);
 
         return await res.json();
     },
@@ -51,7 +49,6 @@ export const backend_api = {
 
             alert('Successfully applied to the listing');
         } catch (error) {
-            console.error('Error applying:', error);
             alert(error.message);
         }
     },

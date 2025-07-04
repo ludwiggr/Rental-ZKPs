@@ -36,10 +36,8 @@ const ListingDetails = () => {
             const token = localStorage.getItem('token');
             try {
                 const listing = await api.getListingById(id, token)
-                console.log(listing);
                 setListing(listing);
                 setApplications(listing.applications)
-                console.log(listing.applications);
             } catch (err) {
                 setError(err.message);
             } finally {
@@ -58,7 +56,6 @@ const ListingDetails = () => {
                 listing?.creditScoreRequirement === undefined &&
                 applications
             ) {
-                console.log('No proof requirements, skipping application status update');
                 setApplications(applications.map(app => {
                     if (app.status === 'pending') {
                         app.status = 'verified';
@@ -76,8 +73,6 @@ const ListingDetails = () => {
         try {
             const token = localStorage.getItem('token');
             const response = await api.verifyApplication(applicationId, listing._id, token);
-            console.log(response);
-
             const verified = response.verified;
 
             if (response.verified) {
@@ -170,15 +165,6 @@ const ListingDetails = () => {
 
         // Convert to number and compare
         const numericValue = parseFloat(proofValue);
-
-        // Debug logging
-        console.log(`Proof validation for ${proofType}:`, {
-            proofValue,
-            numericValue,
-            requirement: requirement.minValue,
-            meetsRequirement: numericValue >= requirement.minValue,
-            proofData: proofData
-        });
 
         return numericValue >= requirement.minValue;
     };

@@ -11,7 +11,7 @@ const {JWT_SECRET, JWT_EXPIRES_IN} = require('../config/config');
 
 // Get all Listings
 router.get('/', async (req, res) => {
-    console.log("GET request received", req.body);
+    console.log("GET request received, request all listings", req.body);
     let userId;
     try {
         userId = check_authorization(req)
@@ -24,7 +24,6 @@ router.get('/', async (req, res) => {
     try {
         const listings = await Listing.find(query);
         res.json({listings});
-        console.log(listings);
     } catch (err) {
         res.status(500).json({message: 'Failed to fetch listings'});
     }
@@ -32,7 +31,7 @@ router.get('/', async (req, res) => {
 
 // Create new Listing
 router.post('/', async (req, res) => {
-    console.log("POST request received", req.body);
+    console.log("POST request received, create new listing", req.body);
 
     let userId;
     try {
@@ -76,23 +75,18 @@ router.post('/', async (req, res) => {
 
 // Get a specific Listing by ID
 router.get('/:id', async (req, res) => {
-    console.log("GET request received", req.params.id);
+    console.log("GET request received, get specifc listing", req.params.id);
     try {
         check_authorization(req)
     } catch (err) {
         return res.status(401).json({message: 'Authorization failed'});
     }
     try {
-
-        console.log("Test", req.params.id);
-
         const listing = await Listing.findById(req.params.id)
             .populate({
                 path: 'applications',
                 select: 'userId status incomeProof creditScoreProof'
             });
-
-        console.log(listing);
 
         if (!listing) return res.status(404).json({ message: 'Listing not found' });
 
@@ -104,6 +98,7 @@ router.get('/:id', async (req, res) => {
 
 // Delete a Listing by ID
 router.delete('/:id', async (req, res) => {
+    console.log("DELETE request received, delete listing", req.params.id);
     let userId;
     try {
         userId = check_authorization(req)

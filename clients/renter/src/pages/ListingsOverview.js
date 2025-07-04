@@ -61,10 +61,6 @@ function ListingsOverview() {
         return stats;
     };
 
-    const getApplicationStatus = (applications = []) => {
-        console.log(applications);
-    }
-
     if (loading) {
         return (
             <Box display="flex" justifyContent="center" alignItems="center" minHeight="100vh" width="100vw">

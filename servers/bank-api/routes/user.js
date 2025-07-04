@@ -8,7 +8,7 @@ const User = require('../models/User');
 // Route to create a user and assign random value for credit score and income
 router.post('/', async (req, res) => {
     try {
-        console.log(req.body);
+        console.log("POST request received, create new user with random values", req.body);
         const { id } = req.body;
 
         if (!id) {
@@ -21,8 +21,6 @@ router.post('/', async (req, res) => {
 
         const user = new User({ id, income, creditScore });
         await user.save();
-
-        console.log("User created:", user);
 
         res.status(201).json({ user });
     } catch (err) {

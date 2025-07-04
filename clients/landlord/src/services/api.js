@@ -12,7 +12,6 @@ export const api = {
             throw new Error('Failed to fetch listings');
         }
         const data = await res.json();
-        console.log(data);
         return data;
     },
 
@@ -45,8 +44,6 @@ export const api = {
     },
 
     async verifyApplication(applicationId, listingId, token) {
-        console.log(applicationId);
-        console.log(listingId);
 
         const response = await fetch(`${API_BASE_URL}/applications/verify`, {
             method: 'POST',
@@ -57,26 +54,24 @@ export const api = {
             body: JSON.stringify({applicationId, listingId})
         });
         if (!response.ok) {
-            console.log('Failed to verify application');
-            console.log(response);
             throw new Error('Failed to verify application');
         }
         return response.json();
     },
 
-    async updateApplicationStatus(listingId, applicationId, status) {
-        const response = await fetch(`${API_BASE_URL}/listings/${listingId}/applications/${applicationId}`, {
-            method: 'PATCH',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({ status })
-        });
-        if (!response.ok) {
-            throw new Error('Failed to update application status');
-        }
-        return response.json();
-    },
+    // async updateApplicationStatus(listingId, applicationId, status) {
+    //     const response = await fetch(`${API_BASE_URL}/listings/${listingId}/applications/${applicationId}`, {
+    //         method: 'PATCH',
+    //         headers: {
+    //             'Content-Type': 'application/json',
+    //         },
+    //         body: JSON.stringify({ status })
+    //     });
+    //     if (!response.ok) {
+    //         throw new Error('Failed to update application status');
+    //     }
+    //     return response.json();
+    // },
 
     async deleteListing(id, token) {
         const response = await fetch(`${API_BASE_URL}/listings/${id}`, {

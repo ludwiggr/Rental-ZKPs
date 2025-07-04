@@ -61,10 +61,6 @@ function Apply() {
         const proofs = {};
         if (needsIncomeProof) proofs.incomeProof = incomeProof;
         if (needsCreditProof) proofs.creditScoreProof = creditProof;
-
-        console.log(proofs);
-        console.log(needsCreditProof);
-        console.log(incomeProof);
         try {
             await backend_api.applyToListing(id, token, proofs);
             navigate('/listings-overview');
