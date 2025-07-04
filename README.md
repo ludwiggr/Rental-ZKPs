@@ -1,443 +1,180 @@
-# Rental-ZKPs: Zero-Knowledge Proofs for Rental Applications
+# Rental-ZKPs Documentation
 
-A comprehensive system that enables privacy-preserving rental applications using zero-knowledge proofs (ZKPs). This project allows users to prove their income meets rental requirements without revealing the actual income amount, leveraging the Heimdall credential system.
+## 1. Project Overview
 
-## 🚀 Quick Start
+Rental-ZKPs is a platform for privacy-preserving rental processes using Zero-Knowledge Proofs (ZKPs). It enables
+landlords and renters to verify sensitive information (e.g., income, employment) without revealing underlying data. The
+system leverages ZKP circuits, a modular backend, and multiple client applications.
 
-### Prerequisites
-- **Node.js** (v16 or higher)
-- **npm** or **yarn**
+## 2. Technology Stack
 
-### Installation & Setup
+- **Languages:** JavaScript, Node.js
+- **Frontend:** React (for landlord, renter, and login clients)
+- **Backend:** Node.js/Express
+- **ZKP Circuits:** Circom
+- **Containerization:** Docker, Docker Compose
+- **Other:** Nginx (reverse proxy), Shell scripts
 
-1. **Clone the repository:**
-   ```bash
-   git clone <repository-url>
-   cd Rental-ZKPs
+## 3. Project Structure
+
+- `clients/` – Frontend clients for landlord, renter, and login
+- `servers/` – Backend services (main backend, bank API)
+- `heimdall/` – ZKP circuits, scripts, and related logic
+- `heimdalljs/` – JavaScript library for ZKP operations
+- `nginx/` – Nginx configuration
+- `docker-compose.yml` – Multi-service orchestration
+
+## 4. Installation & Setup
+
+### 4.1. Prerequisites
+
+- Docker & Docker Compose
+- Node.js (for local development)
+
+### 4.2. Setup
+
+- Build and start all services using Docker compose:
+   ```sh
+   docker-compose up --build
    ```
+- Access the landlord, renter, and login clients in your browser
+    - URL for registration: http://login.localhost/login
+    - URL for login: http://login.localhost/register
 
-2. **Install all dependencies:**
-   ```bash
-   npm install
-   ```
-
-3. **Start all services:**
-   ```bash
-   npm run dev
-   ```
-
-This will start all services concurrently:
-- **Renter Client** - http://localhost:3000
-- **Landlord Client** - http://localhost:3001  
-- **Bank API** - http://localhost:3002
-- **Employer API** - http://localhost:3003
-- **Landlord API** - http://localhost:3004
-
-## 📁 Project Structure
-
-```
-Rental-ZKPs/
-├── clients/                     # Frontend applications
-│   ├── landlord/               # Landlord dashboard (port 3001)
-│   ├── login/                  # Authentication service
-│   └── renter/                 # Renter application (port 3000)
-├── heimdall/                   # Zero-knowledge proof system
-│   ├── circom/                 # Circuit definitions
-│   └── heimdalljs/             # JavaScript implementation
-├── servers/                    # Backend APIs
-│   ├── backend/                # Main backend service
-│   ├── bank-backend_api/               # Bank verification API (port 3002)
-│   ├── employer-backend_api/           # Employer verification API (port 3003)
-│   └── landlord-backend_api/           # Landlord management API (port 3004)
-├── shared/                     # Shared utilities and types
-└── nginx/                      # Reverse proxy configuration
-```
-
-## 🛠️ Available Scripts
-
-### Development Scripts
-```bash
-# Run all services concurrently
-npm run dev
-
-# Run individual services
-npm run dev:employer-backend_api      # Employer API (port 3003)
-npm run dev:bank-backend_api          # Bank API (port 3002)
-npm run dev:landlord-backend_api      # Landlord API (port 3004)
-npm run dev:renter-client     # Renter client (port 3000)
-npm run dev:landlord-client   # Landlord client (port 3001)
-```
-
-### Build Scripts
-```bash
-# Build all workspaces
-npm run build:all
-
-# Build specific components
-npm run build:apis            # All APIs
-npm run build:clients         # All clients
-```
-
-### Utility Scripts
-```bash
-# Install all dependencies
-npm run install:all
-```
-
-## 🔐 Core Features
-
-### Privacy-Preserving Income Verification
-- **Zero-Knowledge Proofs**: Prove income meets requirements without revealing the amount
-- **Attribute-Based Credentials**: Based on Heimdall's credential system
-- **Secure Verification**: Cryptographic proofs ensure authenticity
-
-### Selective Proof Verification
-- **Dynamic Requirements**: Each listing can specify which proofs are required (income, credit score, or both)
-- **Minimum Value Validation**: Proofs are validated against listing-specific minimum requirements
-- **Smart UI**: Only shows relevant proof options based on listing requirements
-- **Efficient Processing**: Only verifies proofs that are actually required for each listing
-
-### Multi-Party System
-- **Renter**: Submit income verification requests
-- **Employer**: Issue income credentials
-- **Bank**: Verify financial status
-- **Landlord**: Verify rental eligibility
-
-### RESTful APIs
-- **Employer API**: Income credential issuance
-- **Bank API**: Financial verification
-- **Landlord API**: Rental application processing
-
-## 🔧 API Reference
-
-### Employer API (Port 3003)
-
-#### POST /verify-income
-Generate a zero-knowledge proof for income verification.
-
-**Request:**
-```json
-{
-  "income": "2500",
-  "employerId": "42"
-}
-```
-
-**Response:**
-```json
-{
-  "success": true,
-  "proof": {
-    "type": "attribute",
-    "output": {
-      "meta": {
-        "type": "Income",
-        "revoked": false,
-        "delegatable": false
-      },
-      "content": {
-        "attribute": "2500",
-        "position": 8
-      }
-    },
-    "proof": {
-      "pi_a": [...],
-      "pi_b": [...],
-      "pi_c": [...]
-    },
-    "publicSignals": [...]
-  }
-}
-```
-
-### Bank API (Port 3002)
-Financial verification endpoints for credit checks and account validation.
-
-### Landlord API (Port 3004)
-Rental application processing and verification endpoints.
-
-#### POST /listings/:id/apply
-Submit a rental application with selective proof validation.
-
-**Request:**
-```json
-{
-  "incomeProof": {
-    "type": "attribute",
-    "proof": { ... },
-    "publicSignals": ["2500"]
-  },
-  "creditScoreProof": {
-    "type": "attribute", 
-    "proof": { ... },
-    "publicSignals": ["750"]
-  }
-}
-```
-
-**Validation Logic:**
-- Only validates proofs that are required by the listing
-- Checks minimum value requirements (e.g., income ≥ €2000)
-- Returns detailed error messages for missing or insufficient proofs
-
-#### POST /listings/:listingId/applications/:applicationId/verify
-Verify application proofs based on listing requirements.
-
-**Response:**
-```json
-{
-  "success": true,
-  "verified": true,
-  "details": {
-    "incomeVerification": true,
-    "creditVerification": true
-  }
-}
-```
-
-**Selective Verification:**
-- Only verifies proofs that are required by the listing
-- Skips verification of non-required proofs
-- Provides detailed breakdown of verification results
-
-## 🏗️ Technical Architecture
-
-### Enhanced Application Workflow
-
-#### Renter Application Process
-1. **Browse Listings**: View available properties with their specific proof requirements
-2. **Generate Required Proofs**: Only generate proofs that are actually needed for the desired listing
-3. **Smart Validation**: System validates that generated proofs meet the listing's minimum requirements
-4. **Selective Submission**: Submit application with only the required proofs
-
-#### Landlord Verification Process
-1. **Requirement-Based Review**: Only review proofs that are relevant to the listing
-2. **Minimum Value Validation**: Verify that submitted proofs meet the specified minimum requirements
-3. **Efficient Processing**: Backend only verifies the proofs that are actually required
-4. **Clear Feedback**: Detailed status indicators show which proofs are valid, missing, or insufficient
-
-#### Proof Requirements Configuration
-Each listing can specify:
-- **Income Proof**: Required minimum income (e.g., €2000/month)
-- **Credit Score Proof**: Required minimum credit score (e.g., 700)
-- **Both Proofs**: When both income and credit verification are needed
-- **No Specific Requirements**: Fallback to requiring both proofs
-
-### Zero-Knowledge Proof System
-
-The system uses **Groth16 zk-SNARKs** with the **Poseidon hash function** for efficient zero-knowledge proofs.
-
-#### Credential Structure
-Each credential contains 16 attributes (power of 2 for Merkle tree compatibility):
-
-```
-Meta Attributes (8):
-[0] ID (e.g., "12345")
-[1] Type (e.g., "Income")
-[2] Holder public key [0]
-[3] Holder public key [1]
-[4] Revocation registry URL
-[5] Expiration timestamp
-[6] Delegatable flag
-[7] Empty string
-
-User Attributes (8):
-[8]  Income value (e.g., "2500") ← Target for ZKP
-[9]  First name (e.g., "John")
-[10] Last name (e.g., "Jones")
-[11] Status (e.g., "No Debt")
-[12] Status2 (e.g., "Rich")
-[13] Empty (padding)
-[14] Empty (padding)
-[15] Empty (padding)
-```
-
-#### System Constraints
-- **Maximum credential ID**: 2,064,384 (2^13 × 252)
-- **Revocation tree size**: 8,192 leaves (2^13)
-- **Leaf size**: 252 bits per leaf
-- **Merkle tree input**: Must be power of 2
-
-### File Management
-All generated files are stored in `servers/employer-backend_api/temp/`:
-- `employer_attr_issuer.json` - Input attributes
-- `employer_cred_holder.json` - Generated credential
-- `employer_holder_pk.json` - Holder public key
-- `employer_holder_sk.txt` - Holder secret key
-- `employer_issuer_pk.json` - Issuer public key
-- `employer_issuer_sk.txt` - Issuer secret key
-- `employer_pres_attribute.json` - Generated presentation
-
-## 🧪 Testing
-
-### Sample Listings
-
-The system includes three sample listings with different proof requirements:
-
-#### 1. Modern City Apartment (ID: 1)
-- **Requirements**: Income ≥ €3000 AND Credit Score ≥ 650
-- **Use Case**: High-end apartment requiring both income and credit verification
-
-#### 2. Cozy Suburban House (ID: 2)  
-- **Requirements**: Income ≥ €4500 AND Credit Score ≥ 700
-- **Use Case**: Premium house with strict financial requirements
-
-#### 3. Income-Only Studio (ID: 3)
-- **Requirements**: Income ≥ €2000 ONLY
-- **Use Case**: Budget-friendly option requiring only income verification
-
-### Manual Testing
-
-1. **Start all services:**
-   ```bash
-   npm run dev
-   ```
-
-2. **Test income verification:**
-   ```bash
-   curl -X POST http://localhost:3003/verify-income \
-     -H "Content-Type: application/json" \
-     -d '{"income": "2500", "employerId": "42"}'
-   ```
-
-3. **Test selective application submission:**
-   - Access Renter Client: http://localhost:3000
-   - Generate income proof with €2500
-   - Try applying to "Income-Only Studio" (should succeed with only income proof)
-   - Try applying to "Modern City Apartment" (should require both proofs)
-
-4. **Test landlord verification:**
-   - Access Landlord Client: http://localhost:3001
-   - View listing details to see proof requirements
-   - Review applications and verify only required proofs are processed
-
-5. **Access applications:**
-   - Renter Client: http://localhost:3000
-   - Landlord Client: http://localhost:3001
-
-### Verify Generated Files
-Check the `servers/employer-backend_api/temp/` directory for generated proof files after successful verification.
-
-## 🐛 Troubleshooting
-
-### Common Issues
-
-#### 1. "No valid in index" Error
-**Cause**: Credential ID exceeds revocation tree limits
-**Solution**: Ensure credential ID is less than 2,064,384
-
-#### 2. "Length of input must be pow of two" Error
-**Cause**: Attribute array doesn't result in power-of-2 total
-**Solution**: Pad user attributes to ensure total count is 16 (or other power of 2)
-
-#### 3. "Proof file was not generated" Error
-**Cause**: Incorrect file paths in CLI commands
-**Solution**: Ensure all files are generated in `/temp` directory
-
-#### 4. Port Conflicts
-**Cause**: Services trying to use same port
-**Solution**: Check that no other services are running on ports 3000-3004
-
-### Debug Mode
-To enable debug logging, add console.log statements:
-
-```javascript
-// In heimdalljs-pres-attribute.js
-console.log("Credential attributes:", credential.attributes);
-
-// In attribute.js
-console.log("Merkle tree input:", cred.attributes);
-
-// In merkleTree.js
-console.log("MerkleTree input length:", input.length);
-```
-
-### Selective Proof Verification Issues
-
-#### 1. "Cannot verify - missing or insufficient proofs" Error
-**Cause**: Application doesn't meet listing's proof requirements
-**Solution**: 
-- Check listing requirements in landlord dashboard
-- Ensure all required proofs are generated
-- Verify proof values meet minimum requirements
-
-#### 2. "Income Proof insufficient" Error
-**Cause**: Generated income proof doesn't meet listing's minimum income requirement
-**Solution**: Generate new income proof with higher value or choose different listing
-
-#### 3. "Missing Income/Credit Score Proof" Error
-**Cause**: Required proof type not provided in application
-**Solution**: Generate the missing proof type before applying
-
-#### 4. Verification Button Disabled
-**Cause**: Application doesn't meet all listing requirements
-**Solution**: Check the detailed error messages in the application dialog
-
-### Logs and Monitoring
-- Check individual service logs in their respective directories
-- Monitor file generation in `servers/employer-backend_api/temp/`
-- Verify API responses with curl or Postman
-
-## 🔒 Security Considerations
-
-### Privacy Features
-- **Zero-knowledge proofs** ensure income amount is never revealed
-- **Cryptographic credentials** prevent forgery
-- **Revocation support** for compromised credentials
-
-### Best Practices
-- Store sensitive keys securely
-- Use HTTPS in production
-- Implement proper authentication
-- Regular credential rotation
-
-## 🚀 Deployment
-
-### Production Setup
-1. Build all services: `npm run build:all`
-2. Configure environment variables
-3. Set up reverse proxy (nginx)
-4. Deploy to your hosting platform
-
-### Environment Variables
-Create `.env` files in each service directory with appropriate configuration.
-
-## 🤝 Contributing
-
-1. **Fork** the repository
-2. **Create** a feature branch (`git checkout -b feature/amazing-feature`)
-3. **Commit** your changes (`git commit -m 'Add amazing feature'`)
-4. **Push** to the branch (`git push origin feature/amazing-feature`)
-5. **Open** a Pull Request
-
-### Development Guidelines
-- Follow existing code style
-- Add tests for new features
-- Update documentation
-- Ensure all services start correctly
-
-## 📚 Additional Resources
-
-### Documentation
-- [Heimdall Credential System](https://github.com/applied-crypto/heimdall)
-- [Zero-Knowledge Proofs](https://z.cash/technology/zksnarks/)
-- [Groth16 Protocol](https://eprint.iacr.org/2016/260.pdf)
-
-### Related Technologies
-- **Circom**: Circuit compiler for zk-SNARKs
-- **SnarkJS**: JavaScript implementation of zk-SNARKs
-- **Poseidon**: Hash function optimized for zero-knowledge proofs
-
-## 📄 License
-
-[Add your license information here]
-
-## 🙏 Acknowledgments
-
-- **Heimdall Team**: For the credential system foundation
-- **Applied Crypto Group**: For zero-knowledge proof implementations
-- **Zcash Foundation**: For zk-SNARK research and development
-
----
-
-**Need help?** Open an issue or check the troubleshooting section above.
+## 5. Architecture
+
+The Rental-ZKPs platform is composed of several services, each running in its own Docker container and orchestrated via
+Docker Compose. The architecture is modular, separating frontend clients, backend APIs, and infrastructure components.
+The bank API simulates a financial institution for income verification and is therefor not really part of the project
+and therefor seperated from the main backend API and the main Database.
+Below is an overview of the main services and their interactions:
+
+### 5.1. Overview of Services
+
+#### 5.1.1. ZKP Project
+
+##### Landlord Client (`clients/landlord`):
+
+- React frontend for landlords to manage rental applications and verify proofs.
+- Communicates with the backend API for data and proof verification.
+
+##### Renter Client (`clients/renter`):
+
+- React frontend for renters to submit applications and present proofs.
+- Interacts with the backend API for submitting data and proofs.
+
+##### Login Client (`clients/login`):
+
+- React frontend for user registration and authentication.
+- Interfaces with the backend for user management.
+
+##### Backend API (`servers/backend`):
+
+- Node.js/Express service providing the main REST API for the platform.
+- Handles user management, rental applications, proof requests, and verification.
+- Interacts with the database and the ZKP logic (heimdall).
+
+#### 5.1.2. Bank System
+
+##### Bank API (`servers/bank-api`):
+
+- Node.js/Express service simulating a bank for income verification.
+- Provides endpoints for proof of income and interacts with the backend.
+
+#### 5.1.3. Others
+
+#### Nginx (`nginx/`):
+
+- Acts as a reverse proxy, routing traffic to the appropriate frontend and backend services.
+
+#### [Heimdall] (`heimdall/`):
+
+- Not an individual service. The heimdall repo is installed and used in the bank API and backend services.
+- Contains ZKP circuits (Circom), scripts, and logic for proof generation and verification.
+- Used by the backend to generate and verify proofs.
+
+### 5.2. Service Interactions
+
+- Clients communicate with the backend API and the bank API via REST endpoints.
+- The backend API and the Bank API call Heimdall scripts or uses HeimdallJS for ZKP operations.
+- Nginx routes HTTP(S) requests to the correct client or API service based on the URL.
+
+### 5.3. Endpoints
+
+#### 5.3.1 Backend API Endpoints
+
+Below are the main REST API endpoints exposed by the backend service ([see routes folder](servers/backend/routes)).
+
+| Method | Endpoint                 | Description                              | Defined in file        |
+|--------|--------------------------|------------------------------------------|------------------------|
+| POST   | /api/register            | Register a new user                      | routes/register.js     |
+| POST   | /api/login               | Authenticate a user                      | routes/login.js        |
+| POST   | /api/applications/verify | Verify application proofs                | routes/applications.js |
+| GET    | /api/listings            | List all listings (optionally mine only) | routes/listings.js     |
+| POST   | /api/listings            | Create a new listing                     | routes/listings.js     |
+| GET    | /api/listings/:id        | Get details for a specific listing       | routes/listings.js     |
+| DELETE | /api/listings/:id        | Delete a listing by ID                   | routes/listings.js     |
+| POST   | /api/listings/:id/apply  | Apply to a listing                       | routes/listings.js     |
+
+#### 5.3.2 Bank API Endpoints
+
+Below are the main REST API endpoints exposed by the bank service. Is acts as a separate system and therefor has its own
+user database. For the definition of the endpoints refer to: [routes folder](servers/bank-api/routes).
+
+| Method | Endpoint             | Description                                       | Defined in file |
+|--------|----------------------|---------------------------------------------------|-----------------|
+| POST   | /user                | Create a user with random income and credit score | routes/user.js  |
+| POST   | /proof/generateProof | Generate a ZKP proof for income or credit score   | routes/proof.js |
+
+### 5.4. Databases
+
+#### 5.4.1. Backend Database
+
+The backend database uses MongoDB. All schemas are defined using Mongoose in [
+`servers/backend/models`](servers/backend/models). The following main collections and fields are defined:
+
+| Collection   | Field                  | Type / Description                                                 | Required | Description                                                        |
+|--------------|------------------------|--------------------------------------------------------------------|----------|--------------------------------------------------------------------|
+| users        | username               | String                                                             | Yes      | Username of the user                                               |
+|              | email                  | String, unique                                                     | Yes      | Email address (unique)                                             |
+|              | password               | String                                                             | Yes      | Hashed password                                                    |
+| listings     | name                   | String                                                             | Yes      | Name of the listing                                                |
+|              | address                | String                                                             | Yes      | Address of the property                                            |
+|              | size                   | String                                                             | Yes      | Size of the property                                               |
+|              | createdAt              | Date, default: Date.now                                            | No       | Creation date                                                      |
+|              | createdBy              | ObjectId, ref: User                                                | Yes      | Reference to the creator (User)                                    |
+|              | applications           | [ObjectId], ref: Application                                       | No       | Applications for this listing                                      |
+|              | price                  | Number                                                             | Yes      | Price of the listing                                               |
+|              | type                   | String, enum: flat/house/studio/apartment                          | Yes      | Type of property                                                   |
+|              | incomeRequirement      | Number                                                             | No       | Minimum required income, undefined when no proof is required       |
+|              | creditScoreRequirement | Number                                                             | No       | Minimum required credit score, undefined when no proof is required |
+| applications | userId                 | ObjectId, ref: User                                                | Yes      | Reference to the applicant (User)                                  |
+|              | status                 | String, enum: pending/verified/approved/rejected, default: pending | No       | Application status                                                 |
+|              | incomeProof            | Object, default: {{}}                                              | No       | ZKP proof of income                                                |
+|              | creditScoreProof       | Object, default: {{}}                                              | No       | ZKP proof of credit score                                          |
+|              | createdAt/updatedAt    | Date, managed by timestamps option                                 | No       | Creation and update timestamps                                     |
+
+#### 5.4.2. Bank Database
+
+The bank database uses MongoDB and stores the following collection and fields (see `servers/bank-api/models/User.js`):
+
+| Collection | Field       | Type / Description      | Required | Description            |
+|------------|-------------|-------------------------|----------|------------------------|
+| users      | id          | String, unique, indexed | Yes      | Unique user identifier |
+|            | income      | Number                  | Yes      | User's income          |
+|            | creditScore | Number                  | Yes      | User's credit score    |
+
+- All schemas are defined using Mongoose in `servers/bank-api/models/`.
+- Each user in the bank system has a unique id, an income, and a credit score.
+- All private information of the users is separated from the main backend database and is only used for proof
+  generation.
+- User's income and credit scores are randomly generated when a user is created in the bank system.
+
+For details, see the schema definition in the file:
+
+- [`models/User.js`](servers/bank-api/models/User.js)
+
+## 9. License & Contributors
+
+- See `LICENSE` for license details
+- For contributions, open issues or pull requests on GitHub
