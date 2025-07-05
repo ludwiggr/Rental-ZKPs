@@ -38,8 +38,8 @@ system leverages ZKP circuits, a modular backend, and multiple client applicatio
    docker-compose up --build
    ```
 - Access the landlord, renter, and login clients in your browser
-    - URL for registration: http://login.localhost/login
-    - URL for login: http://login.localhost/register
+    - URL for registration: http://login.localhost/register
+    - URL for login: http://login.localhost/login
 
 ## 5. Architecture
 
@@ -173,8 +173,3 @@ The bank database uses MongoDB and stores the following collection and fields (s
 For details, see the schema definition in the file:
 
 - [`models/User.js`](servers/bank-api/models/User.js)
-
-## 9. License & Contributors
-
-- See `LICENSE` for license details
-- For contributions, open issues or pull requests on GitHub
