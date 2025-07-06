@@ -12,6 +12,43 @@ const path = require("path");
 const fs = require("fs").promises;
 
 
+// Update application status
+router.post("/updateStatus", async (req, res) => {
+    console.log("POST request received", req.body);
+
+    let userId;
+    try {
+        userId = check_authorization(req) // ToDO Refactor
+    } catch (err) {
+        return res.status(401).json({message: 'Authorization failed'});
+    }
+
+    try {
+        const {applicationId, status} = req.body;
+
+        if (!applicationId || !status) {
+            return res.status(400).json({error: 'Missing required fields'});
+        }
+
+        const application = await Application.findById(applicationId);
+        if (!application) {
+            return res.status(404).json({error: 'Application not found'});
+        }
+
+        application.status = status;
+        await application.save();
+
+        res.json({
+            success: true,
+            message: 'Application status updated successfully',
+            application
+        });
+
+    } catch (err) {
+        res.status(500).json({ message: `Server error: ${err.message}`});
+    }
+});
+
 
 // Verify application
 router.post("/verify", async (req, res) => {

@@ -58,7 +58,7 @@ const ListingDetails = () => {
             ) {
                 setApplications(applications.map(app => {
                     if (app.status === 'pending') {
-                        app.status = 'verified';
+                        handleUpdateStatus(app, 'verified');
                     }
                     return app;
                 }));
@@ -67,24 +67,16 @@ const ListingDetails = () => {
     }, [listing, applications]);
 
 
-    const handleVerifyApplication = async (applicationId) => {
+    const handleVerifyApplication = async (application) => {
         setLoading(true);
 
         try {
             const token = localStorage.getItem('token');
-            const response = await api.verifyApplication(applicationId, listing._id, token);
+            const response = await api.verifyApplication(application, listing._id, token);
             const verified = response.verified;
 
             if (response.verified) {
-                setApplications(applications =>
-                    applications.map(app =>
-                        app._id === applicationId ? {
-                            ...app,
-                            status: 'verified',
-                            verificationResult: response.verified
-                        } : app
-                    )
-                );
+                handleUpdateStatus(application, "verified");
             } else {
                 setError('Verification failed');
             }
@@ -99,10 +91,11 @@ const ListingDetails = () => {
     const handleUpdateStatus = async (application, newStatus) => {
         setApplications(applications =>
             applications.map(app =>
-                app.id === application.id ? {...app, status: newStatus} : app
+                app._id === application._id ? {...app, status: newStatus} : app
             )
         );
-        // ToDo: Update application status in backend
+        const token = localStorage.getItem('token');
+        api.setApplicationStatus(application._id, newStatus, token);
     };
 
     const handleViewProof = (proof, type) => {
@@ -324,7 +317,7 @@ const ListingDetails = () => {
                                                 <>
                                                     {canVerifyApplication(application) ? (
                                                         <Button
-                                                            onClick={() => handleVerifyApplication(application._id)}
+                                                            onClick={() => handleVerifyApplication(application)}
                                                             disabled={loading}
                                                             variant="outlined"
                                                             size="small"

@@ -59,20 +59,6 @@ export const api = {
         return response.json();
     },
 
-    // async updateApplicationStatus(listingId, applicationId, status) {
-    //     const response = await fetch(`${API_BASE_URL}/listings/${listingId}/applications/${applicationId}`, {
-    //         method: 'PATCH',
-    //         headers: {
-    //             'Content-Type': 'application/json',
-    //         },
-    //         body: JSON.stringify({ status })
-    //     });
-    //     if (!response.ok) {
-    //         throw new Error('Failed to update application status');
-    //     }
-    //     return response.json();
-    // },
-
     async deleteListing(id, token) {
         const response = await fetch(`${API_BASE_URL}/listings/${id}`, {
             method: 'DELETE',
@@ -85,5 +71,27 @@ export const api = {
             throw new Error('Failed to delete listing');
         }
         return response.json();
+    },
+
+    async setApplicationStatus(applicationId, status, token) {
+
+        try {
+            const response = await fetch(`${API_BASE_URL}/applications/updateStatus`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    Authorization: `Bearer ${token}`,
+                },
+                body: JSON.stringify({ applicationId, status }),
+            });
+
+            const data = await response.json();
+
+            if (!response.ok) {
+                throw new Error(data.message || 'Something went wrong');
+            }
+        } catch (error) {
+            alert(error.message);
+        }
     }
 }; 
