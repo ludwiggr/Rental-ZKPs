@@ -1,6 +1,6 @@
-import React, {useEffect, useState} from 'react';
-import {useNavigate} from 'react-router-dom';
-import {backend_api} from "../services/backend_api";
+import React, { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { backend_api } from "../services/backend_api";
 import {
     Box,
     Button,
@@ -64,7 +64,7 @@ function ListingsOverview() {
     if (loading) {
         return (
             <Box display="flex" justifyContent="center" alignItems="center" minHeight="100vh" width="100vw">
-                <CircularProgress/>
+                <CircularProgress />
             </Box>
         );
     }
@@ -72,7 +72,7 @@ function ListingsOverview() {
     if (error) {
         return (
             <Box display="flex" justifyContent="center" alignItems="center" minHeight="100vh" width="100vw">
-                <Container maxWidth="lg" sx={{mt: 4}}>
+                <Container maxWidth="lg" sx={{ mt: 4 }}>
                     <Alert severity="error">{error}</Alert>
                 </Container>
             </Box>
@@ -80,18 +80,18 @@ function ListingsOverview() {
     }
 
     return (
-        <Container maxWidth={false} sx={{py: 0, width: '100vw', px: 0}}>
+        <Container maxWidth={false} sx={{ py: 0, width: '100vw', px: 0 }}>
             <Box display="flex" justifyContent="space-between" alignItems="center" mb={4}>
-                <Typography variant="h4" component="h1" sx={{flexGrow: 1}}>
+                <Typography variant="h4" component="h1" sx={{ flexGrow: 1 }}>
                     Your Listings
                 </Typography>
                 <Button
                     variant="contained"
                     startIcon={null}
                     onClick={() => navigate('/create-listing')}
-                    sx={{minWidth: 0, width: 40, height: 40, borderRadius: '50%', p: 0}}
+                    sx={{ minWidth: 0, width: 40, height: 40, borderRadius: '50%', p: 0 }}
                 >
-                    <AddIcon/>
+                    <AddIcon />
                 </Button>
             </Box>
 
@@ -130,7 +130,7 @@ function ListingsOverview() {
                                         {/* Proof Requirements */}
 
                                         {(listing.incomeRequirement || listing.creditScoreRequirement) && (
-                                            <Box sx={{mb: 2}}>
+                                            <Box sx={{ mb: 2 }}>
                                                 <Typography variant="subtitle2" color="primary" gutterBottom>
                                                     Required Proofs:
                                                 </Typography>
@@ -153,7 +153,7 @@ function ListingsOverview() {
                                             </Typography>
                                             <Stack direction="row" spacing={1}>
                                                 <Chip
-                                                    icon={<PersonIcon/>}
+                                                    icon={<PersonIcon />}
                                                     label={`${stats.total} Total`}
                                                     size="small"
                                                 />
@@ -185,7 +185,7 @@ function ListingsOverview() {
                                         <Button
                                             size="small"
                                             onClick={() => navigate(`/apply/${listing._id}`)}
-                                            startIcon={<VisibilityIcon/>}
+                                            startIcon={<VisibilityIcon />}
                                         >
                                             Apply
                                         </Button>

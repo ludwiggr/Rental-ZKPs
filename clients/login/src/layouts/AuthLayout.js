@@ -1,7 +1,7 @@
 import React from 'react';
 import { Outlet } from 'react-router-dom';
 
-function MainLayout() {
+function AuthLayout() {
     return (
         <>
             <main>
@@ -11,4 +11,4 @@ function MainLayout() {
     );
 }
 
-export default MainLayout;
+export default AuthLayout;

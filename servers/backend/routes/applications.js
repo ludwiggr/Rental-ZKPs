@@ -10,6 +10,9 @@ const { JWT_SECRET, JWT_EXPIRES_IN } = require('../config/config');
 // Verify application proofs
 const path = require("path");
 const fs = require("fs").promises;
+const { exec } = require('child_process');
+const util = require('util');
+const execAsync = util.promisify(exec);
 
 
 // Update application status
