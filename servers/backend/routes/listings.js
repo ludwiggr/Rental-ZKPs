@@ -22,7 +22,10 @@ router.get('/', async (req, res) => {
     const query = mineOnly ? {createdBy: userId} : {};
 
     try {
-        const listings = await Listing.find(query);
+        const listings = await Listing.find(query).populate({
+            path: 'applications',
+            select: 'userId status incomeProof creditScoreProof'
+        })
         res.json({listings});
     } catch (err) {
         res.status(500).json({message: 'Failed to fetch listings'});

@@ -48,13 +48,15 @@ function ListingsOverview() {
             total: applications.length,
             pending: 0,
             approved: 0,
-            rejected: 0
+            rejected: 0,
+            verified: 0
         };
 
         applications.forEach(app => {
             if (app.status === 'approved') stats.approved++;
             else if (app.status === 'rejected') stats.rejected++;
-            else stats.pending++;
+            else if (app.status === 'verified') stats.verified++;
+            else if (app.status === 'pending') stats.pending++;
         });
 
         return stats;
@@ -127,7 +129,6 @@ function ListingsOverview() {
                                         )}
 
                                         {/* Proof Requirements */}
-
                                         {(listing.incomeRequirement || listing.creditScoreRequirement) && (
                                             <Box sx={{mb: 2}}>
                                                 <Typography variant="subtitle2" color="primary" gutterBottom>
@@ -159,6 +160,13 @@ function ListingsOverview() {
                                                 {stats.pending > 0 && (
                                                     <Chip
                                                         label={`${stats.pending} Pending`}
+                                                        size="small"
+                                                        color="primary"
+                                                    />
+                                                )}
+                                                {stats.verified > 0 && (
+                                                    <Chip
+                                                        label={`${stats.verified} Verified`}
                                                         size="small"
                                                         color="primary"
                                                     />
