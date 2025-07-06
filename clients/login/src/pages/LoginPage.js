@@ -26,9 +26,17 @@ function LoginPage() {
             }
             const data = await res.json();
             if (role === 'landlord') {
-                window.location.href = `http://landlord.localhost/landing?token=${encodeURIComponent(data.token)}`;
+                // Use the same host and port, but with landlord.localhost in the Host header
+                const currentHost = window.location.host;
+                window.location.href = `http://${currentHost}/landing?token=${encodeURIComponent(data.token)}`;
+                // Set a flag to indicate this should be treated as landlord
+                sessionStorage.setItem('userRole', 'landlord');
             } else if (role === 'tenant') {
-                window.location.href = `http://tenant.localhost/landing?token=${encodeURIComponent(data.token)}&userId=${encodeURIComponent(data.userId)}`;
+                // Use the same host and port, but with tenant.localhost in the Host header
+                const currentHost = window.location.host;
+                window.location.href = `http://${currentHost}/landing?token=${encodeURIComponent(data.token)}&userId=${encodeURIComponent(data.userId)}`;
+                // Set a flag to indicate this should be treated as tenant
+                sessionStorage.setItem('userRole', 'tenant');
             }
         } catch (err) {
             setMessage(err.message || 'Error connecting to server');

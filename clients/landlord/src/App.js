@@ -17,6 +17,7 @@ function App() {
                 {/* Redirect from root to listings overview */}
                 <Route path="/" element={<Navigate to="/listings-overview" replace />} />
                 <Route path="/landing" element={<DummyLandingPage />} />
+                <Route path="/landlord-landing" element={<DummyLandingPage />} />
                 <Route path="/listings-overview" element={<ListingsOverview />} />
                 <Route path="/create-listing" element={<CreateListing />} />
                 <Route path="/listing/:id" element={<ListingDetails />} />
