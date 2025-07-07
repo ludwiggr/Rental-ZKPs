@@ -1,7 +1,7 @@
-import React, {useEffect} from 'react';
-import {useNavigate} from 'react-router-dom';
+import React, { useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 
-function DummyLandingPage() {
+function LandingPage() {
     const navigate = useNavigate();
 
     useEffect(() => {
@@ -9,7 +9,8 @@ function DummyLandingPage() {
             const urlParams = new URLSearchParams(window.location.search);
             const token = urlParams.get('token');
             if (!token) {
-                window.location.href = `http://login.localhost/login`;
+                const currentHost = window.location.host;
+                window.location.href = `http://${currentHost}/login`;
             }
             localStorage.setItem('token', token);
         }
@@ -20,4 +21,4 @@ function DummyLandingPage() {
     return (<div>Loading...</div>)
 }
 
-export default DummyLandingPage;
+export default LandingPage;

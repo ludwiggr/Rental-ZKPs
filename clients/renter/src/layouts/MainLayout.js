@@ -6,8 +6,9 @@ function NavBar() {
         localStorage.removeItem('token');
         localStorage.removeItem('userId');
 
-        // Redirect to login page or refresh
-        window.location.href = `http://login.localhost/login`;
+        // Redirect to login page using current host and port
+        const currentHost = window.location.host;
+        window.location.href = `http://${currentHost}/login`;
 
     };
 

@@ -5,7 +5,7 @@ import { Routes, Route, Navigate } from 'react-router-dom';
 import ListingsOverview from './pages/ListingsOverview';
 import CreateListing from "./pages/CreateListing";
 import ListingDetails from './pages/ListingDetails';
-import DummyLandingPage from './pages/DummyLandingPage';
+import LandingPage from './pages/LandingPage';
 
 // Layouts
 import MainLayout from './layouts/MainLayout';
@@ -16,8 +16,8 @@ function App() {
             <Route element={<MainLayout />}>
                 {/* Redirect from root to listings overview */}
                 <Route path="/" element={<Navigate to="/listings-overview" replace />} />
-                <Route path="/landing" element={<DummyLandingPage />} />
-                <Route path="/landlord-landing" element={<DummyLandingPage />} />
+                <Route path="/landing" element={<LandingPage />} />
+                <Route path="/landlord-landing" element={<LandingPage />} />
                 <Route path="/listings-overview" element={<ListingsOverview />} />
                 <Route path="/create-listing" element={<CreateListing />} />
                 <Route path="/listing/:id" element={<ListingDetails />} />

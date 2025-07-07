@@ -1,7 +1,7 @@
-import React, {useEffect} from 'react';
-import {useNavigate} from 'react-router-dom';
+import React, { useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 
-function DummyLandingPage() {
+function LandingPage() {
     const navigate = useNavigate();
 
     useEffect(() => {
@@ -14,7 +14,8 @@ function DummyLandingPage() {
             console.log("Token", token);
 
             if (!token || !userId) {
-                //window.location.href = `http://login.localhost/login`;
+                //const currentHost = window.location.host;
+                //window.location.href = `http://${currentHost}/login`;
                 console.log("Token or User ID not found in URL parameters.");
             }
             localStorage.setItem('token', token);
@@ -28,4 +29,4 @@ function DummyLandingPage() {
     return (<div>Loading...</div>)
 }
 
-export default DummyLandingPage;
+export default LandingPage;
