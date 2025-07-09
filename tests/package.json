@@ -1,0 +1,41 @@
+{
+    "name": "rental-zkps-tests",
+    "version": "1.0.0",
+    "description": "Backend unit and integration tests for Rental ZKPs system",
+    "scripts": {
+        "test": "jest",
+        "test:watch": "jest --watch",
+        "test:coverage": "jest --coverage",
+        "test:backend": "jest --testPathPattern=backend",
+        "test:bank-api": "jest --testPathPattern=bank-api",
+        "test:models": "jest --testPathPattern=models",
+        "test:routes": "jest --testPathPattern=routes"
+    },
+    "devDependencies": {
+        "jest": "^29.5.0",
+        "supertest": "^6.3.3"
+    },
+    "dependencies": {
+        "express": "^4.18.2",
+        "mongoose": "^7.8.7",
+        "bcrypt": "^5.1.0",
+        "jsonwebtoken": "^9.0.0",
+        "cors": "^2.8.5",
+        "dotenv": "^16.0.3"
+    },
+    "jest": {
+        "testEnvironment": "node",
+        "setupFilesAfterEnv": [
+            "<rootDir>/setup-mocks.js"
+        ],
+        "testTimeout": 10000,
+        "testPathIgnorePatterns": [
+            "<rootDir>/frontend/"
+        ],
+        "collectCoverageFrom": [
+            "../servers/**/*.js",
+            "!../servers/**/node_modules/**",
+            "!../servers/**/temp/**"
+        ]
+    }
+}
