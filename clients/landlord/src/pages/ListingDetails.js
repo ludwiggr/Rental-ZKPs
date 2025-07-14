@@ -188,7 +188,7 @@ const ListingDetails = () => {
     if (!listing) return <Alert severity="info">Listing not found</Alert>;
 
     return (
-        <Box sx={{p: 3, maxWidth: '800px', margin: '0 auto'}}>
+        <Box sx={{p: 3, maxWidth: '800px', margin: '0 auto', py: '30px', width: '100vw', px: '30px', height: '100vh'}}>
             <Paper sx={{p: 3, mb: 3}}>
                 <Typography variant="h4" gutterBottom>{listing.name}</Typography>
                 <Typography variant="body1" paragraph><strong>Address:</strong> {listing.address}</Typography>

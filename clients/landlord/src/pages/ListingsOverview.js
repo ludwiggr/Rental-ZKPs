@@ -14,8 +14,6 @@ import {
     Container,
     Chip,
     Stack,
-    IconButton,
-    Tooltip
 } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
 import VisibilityIcon from '@mui/icons-material/Visibility';
@@ -80,24 +78,25 @@ function ListingsOverview() {
         );
     }
 
-    // ToDo: Fix padding of body. x padding left and right should be 30 as in the header.
     return (
-        <Container maxWidth={false} sx={{py: 0, width: '100vw', px: 0}}>
-            <Box display="flex" justifyContent="space-between" alignItems="center" mb={4}>
-                <Typography variant="h4" component="h1" sx={{flexGrow: 1}}>
+        <Container sx={{py: 4, px: 0, height: '100vh', maxWidth: '100%', width: '100%'}}>
+            <Box sx={{ width: 'auto', display: 'flex', justifyContent: 'flex-end', pr: 3, pb: 3}}>
+                <Typography variant="h4" component="h3" sx={{flexGrow: 1}}>
                     Your Listings
                 </Typography>
-                <Button
-                    variant="contained"
-                    startIcon={null}
-                    onClick={() => navigate('/create-listing')}
-                    sx={{ minWidth: 0, width: 40, height: 40, borderRadius: '50%', p: 0 }}
-                >
-                    <AddIcon />
-                </Button>
+                <Box sx={{ width: { xs: 40, sm: 40, md: 'calc(33.3333% - 24px)' }, display: 'flex', justifyContent: 'flex-end' }}>
+                    <Button
+                        variant="contained"
+                        startIcon={null}
+                        onClick={() => navigate('/create-listing')}
+                        sx={{ minWidth: 0, width: 40, height: 40, borderRadius: '50%', p: 0, mr: 0 }}
+                    >
+                        <AddIcon />
+                    </Button>
+                </Box>
             </Box>
 
-            <Grid container spacing={3}>
+            <Grid container spacing={3} sx={{ pr: 3 }}>
                 {listings.length === 0 ? (
                     <Grid item xs={12}>
                         <Alert severity="info">
@@ -109,7 +108,7 @@ function ListingsOverview() {
                         const stats = getApplicationStats(listing.applications);
                         return (
                             <Grid item xs={12} sm={6} md={4} key={listing._id}>
-                                <Card>
+                                <Card sx={{ height: '100%', boxSizing: 'border-box', m: 0 }}>
                                     <CardContent>
                                         <Box display="flex" justifyContent="space-between" alignItems="flex-start">
                                             <Typography variant="h6" gutterBottom>

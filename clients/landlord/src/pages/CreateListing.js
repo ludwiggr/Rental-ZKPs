@@ -110,7 +110,7 @@ const CreateListing = () => {
     };
 
     return (
-        <Box sx={{ maxWidth: '800px', margin: '2rem auto', padding: '1rem' }}>
+        <Box sx={{p: 3, maxWidth: '800px', margin: '0 auto', py: '30px', width: '100vw', px: '30px', height: '100vh'}}>
             <Paper sx={{ p: 3 }}>
                 <Typography variant="h4" gutterBottom>Create New Listing</Typography>
 
