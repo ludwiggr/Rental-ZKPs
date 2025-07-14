@@ -79,7 +79,7 @@ function Apply() {
     const needsCreditProof = listing.creditScoreRequirement !== undefined;
 
     return (
-        <Box maxWidth={600} mx="auto" mt={4}>
+        <Box maxWidth={600} mx="auto" mt={4} sx={{py: '30px', width: '100vw', px: '30px', height: '100vh'}}>
             <Typography variant="h4" gutterBottom sx={{fontWeight: 600, mb: 3}}>Application
                 for: {listing.name}</Typography>
             <Box

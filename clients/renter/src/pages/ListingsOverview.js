@@ -80,22 +80,14 @@ function ListingsOverview() {
     }
 
     return (
-        <Container maxWidth={false} sx={{ py: 0, width: '100vw', px: 0 }}>
+        <Container sx={{py: 4, width: '100vw', px: 4, height: '100vh'}}>
             <Box display="flex" justifyContent="space-between" alignItems="center" mb={4}>
                 <Typography variant="h4" component="h1" sx={{ flexGrow: 1 }}>
-                    Your Listings
+                    Available Listings
                 </Typography>
-                <Button
-                    variant="contained"
-                    startIcon={null}
-                    onClick={() => navigate('/create-listing')}
-                    sx={{ minWidth: 0, width: 40, height: 40, borderRadius: '50%', p: 0 }}
-                >
-                    <AddIcon />
-                </Button>
             </Box>
 
-            <Grid container spacing={3}>
+            <Grid container spacing={3} sx={{ pr: 0 }}>
                 {listings.length === 0 ? (
                     <Grid item xs={12}>
                         <Alert severity="info">
@@ -107,7 +99,7 @@ function ListingsOverview() {
                         const stats = getApplicationStats(listing.applications);
                         return (
                             <Grid item xs={12} sm={6} md={4} key={listing.id}>
-                                <Card>
+                                <Card sx={{ height: '100%', boxSizing: 'border-box', m: 0 }}>
                                     <CardContent>
                                         <Box display="flex" justifyContent="space-between" alignItems="flex-start">
                                             <Typography variant="h6" gutterBottom>

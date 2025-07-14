@@ -48,9 +48,14 @@ function MainLayout() {
         <div style={styles.main}>
             <NavBar />
             <main style={{
-                backgroundColor: '#f0f0f0', // Light gray background
+                backgroundColor: '#f0f0f0',
+                padding: 0,
+                margin: 0,
+                minHeight: '100vh',
+                display: 'flex',
+                flexDirection: 'column',
             }}>
-                <Outlet />
+                <Outlet style={{ flex: 1, marginTop: 0 }} />
             </main>
         </div>
     );
