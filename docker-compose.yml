@@ -33,9 +33,9 @@ services:
     container_name: backend-server-container
     expose:
       - "3000"
-    volumes:
-      - ./servers/backend:/app
-      - /app/node_modules
+#    volumes:
+#      - ./servers/backend:/app
+#      - /app/node_modules
     environment:
       - NODE_ENV=development
       #- MONGO_URI='mongodb://root:example@database:27017/db?authSource=admin'

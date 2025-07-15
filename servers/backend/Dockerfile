@@ -1,5 +1,5 @@
 # Use official Node.js LTS version as base image
-FROM node:18
+FROM node:20-alpine
 LABEL authors="sikoby"
 
 # Create and set working directory inside the container
