@@ -95,7 +95,7 @@ const ListingDetails = () => {
             )
         );
         const token = localStorage.getItem('token');
-        api.setApplicationStatus(application._id, newStatus, token);
+        // api.setApplicationStatus(application._id, newStatus, token); ToDo: should not be commented out
     };
 
     const handleViewProof = (proof, type) => {
@@ -275,38 +275,6 @@ const ListingDetails = () => {
                                                             </Button>
                                                         )}
                                                     </Stack>
-                                                    {/* Show missing required proofs */}
-
-                                                    {/*{getRequiredProofs().map(proofType => {*/}
-                                                    {/*    const hasProof = proofType === 'income' ? application.incomeProof : application.creditScoreProof;*/}
-                                                    {/*    if (!hasProof) {*/}
-                                                    {/*        return (*/}
-                                                    {/*            <Typography key={proofType} variant="body2"*/}
-                                                    {/*                        color="error.main">*/}
-                                                    {/*                Missing {proofType === 'income' ? 'Income' : 'Credit Score'} Proof*/}
-                                                    {/*                ❌*/}
-                                                    {/*            </Typography>*/}
-                                                    {/*        );*/}
-                                                    {/*    }*/}
-                                                    {/*    return null;*/}
-                                                    {/*})}*/}
-                                                    {/* Show insufficient proof values */}
-                                                    {/*{getRequiredProofs().map(proofType => {*/}
-                                                    {/*    const proof = proofType === 'income' ? application.incomeProof : application.creditScoreProof;*/}
-                                                    {/*    if (proof && !checkProofMeetsRequirements(proofType, proof)) {*/}
-                                                    {/*        const requirement = listing.proofRequirements.find(req => req.type === proofType);*/}
-                                                    {/*        return (*/}
-                                                    {/*            <Typography key={proofType} variant="body2"*/}
-                                                    {/*                        color="error.main">*/}
-                                                    {/*                {proofType === 'income' ? 'Income' : 'Credit Score'} Proof*/}
-                                                    {/*                insufficient*/}
-                                                    {/*                (need {proofType === 'income' ? `€${requirement.minValue}` : requirement.minValue})*/}
-                                                    {/*                ⚠️*/}
-                                                    {/*            </Typography>*/}
-                                                    {/*        );*/}
-                                                    {/*    }*/}
-                                                    {/*    return null;*/}
-                                                    {/*})}*/}
                                                 </Stack>
                                             </Box>
                                         }

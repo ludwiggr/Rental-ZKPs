@@ -21,7 +21,7 @@ router.post("/updateStatus", async (req, res) => {
 
     let userId;
     try {
-        userId = check_authorization(req) // ToDO Refactor
+        userId = check_authorization(req)
     } catch (err) {
         return res.status(401).json({message: 'Authorization failed'});
     }
@@ -71,7 +71,7 @@ router.post("/verify", async (req, res) => {
             return res.status(400).json({error: 'Missing required fields'});
         }
 
-        const application = Application.findById(applicationId);
+        const application = await Application.findById(applicationId);
         if (!application) {
             return res.status(404).json({error: 'Application not found'});
         }
@@ -81,62 +81,62 @@ router.post("/verify", async (req, res) => {
             return res.status(404).json({error: 'Listing not found'});
         }
 
-        let verificationResult = true;
+        let incomeVerificationResult = true;
+        let creditScoreVerificationResult = true;
         if (listing.incomeRequirement !== undefined && application.incomeProof!== undefined ) {
             const incomeProof = application.incomeProof;
             if (!incomeProof || !incomeProof.proof) {
                 return res.status(400).json({error: 'Income proof is missing'});
             }
-            proof = incomeProof.proof;
-            verificationResult = await verifyProof(proof);
+            const proof = incomeProof.proof;
+            incomeVerificationResult = await verifyProof(proof);
         }
         if (listing.creditScoreRequirement !== undefined  && application.creditScoreProof !== undefined ) {
             const creditScoreProof = application.creditScoreProof;
             if (!creditScoreProof || !creditScoreProof.proof) {
                 return res.status(400).json({error: 'Credit score proof is missing'});
             }
-            proof = creditScoreProof.proof;
-            verificationResult = await verifyProof(proof);
+            const proof = creditScoreProof.proof;
+            creditScoreVerificationResult = await verifyProof(proof);
         }
 
         res.json({
             success: true,
-            verified: verificationResult
+            verified: incomeVerificationResult & creditScoreVerificationResult,
         });
-
     } catch (err) {
+        console.log(err);
         res.status(500).json({ message: `Server error: ${err.message}`});
     }
-
-
 });
 
 async function verifyProof(proof) {
+
+    console.log("Proof:", proof);
+    proof.privateInput = proof.privateInput || {};
+
     const workDir = path.join(process.cwd(), 'temp');
     await fs.mkdir(workDir, {recursive: true});
-
-    const heimdallPath = path.join(process.cwd(), '..', '..', 'heimdall', 'heimdalljs', 'cli');
-
+    const heimdallPath = path.join('..', 'heimdall', 'heimdalljs', 'cli');
     // Save proof to file
     const proofPath = path.join(workDir, 'proof_to_verify.json');
     await fs.writeFile(proofPath, JSON.stringify(proof));
-
     // Verify the proof
     const result = await execAsync(`node ${path.join(heimdallPath, 'heimdalljs-verify.js')} ${proofPath}`, {
         cwd: workDir
     });
-
+    console.log(result.stdout);
+    console.log("result:", result);
     const verificationResult = result.stdout.includes('Verification successful');
+
+    console.log("verificationResult:", verificationResult);
     return verificationResult;
 }
 
 function check_authorization(req) {
     const authHeader = req.headers.authorization;
     if (!authHeader) throw new Error('Missing token');
-
     const token = authHeader.split(' ')[1];
-
-
     const decoded = jwt.verify(token, JWT_SECRET);
     return decoded.userId;
 }

@@ -31,7 +31,6 @@ const checkPresentation = async (path, options) => {
         }
         let revRoot = await getRevocationRoot(presentation.output.meta.revocationRegistry);
         let valid = presentation.verify(poseidonHash);
-        console.info(presentation.output);
         return Promise.resolve(valid);
     } catch (err) {
         return Promise.reject(err);
@@ -41,6 +40,9 @@ const checkPresentation = async (path, options) => {
 program.action((path, options) => {
     checkPresentation(path, options).then(res => {
         console.log(res);
+        if (res === true) {
+            console.log("Verification successful");
+        }
         process.exit();
    }).catch(res => {
         console.log(res);

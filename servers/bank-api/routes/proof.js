@@ -89,7 +89,7 @@ router.post('/generateProof', async (req, res) => {
         --id 67890 \
         --publicKey bank_holder_pk.json \
         --expiration 365 \
-        --type CreditScore \
+        --type ${type} \
         --delegatable 0 \
         --registry https://gitlab.fit.fraunhofer.de/matthias.babel/heimdall-revocation/-/raw/master/ \
         --secretKey bank_issuer_sk.txt \
@@ -108,6 +108,8 @@ router.post('/generateProof', async (req, res) => {
             await fs.access(proofPath);
             const proof = await fs.readFile(proofPath, 'utf-8');
             const proofJson = JSON.parse(proof);
+            console.log("Proof JSON:", proofJson);
+
             // const bankPK = await fs.readFile(path.join(workDir, 'bank_issuer_pk.json'), 'utf-8');
             // const bankJson = JSON.parse(proofJson);
             res.json({
